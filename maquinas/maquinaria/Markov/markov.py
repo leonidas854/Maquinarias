@@ -4,7 +4,7 @@ class Markov:
     def __init__(self, matrix=None,vector=None):
         self.matrix = np.array(matrix) if matrix is not None else None
         self.vector = np.array(vector) if vector is not None else None
-
+        
         if self.matrix is not None and self.vector is not None:
             if not self.Verificar():
                 raise ValueError("Matriz no válida")
@@ -21,7 +21,6 @@ class Markov:
         self.matrix = np.array(matrix)
         if self.vector is not None and not self.Verificar():
             raise ValueError("Matriz no válida al establecer matriz")
-
     def set_vector(self, vector):
         self.vector = np.array(vector)
         if self.matrix is not None and not self.Verificar():
@@ -41,5 +40,13 @@ class Markov:
         for _ in range(saltos):
             new_vector = np.dot(new_vector, self.matrix)
         return new_vector
+    def Convertir_Probabilidad(self,Matriz):
+        self.matrix = []
+        for i in range(len(Matriz)):
+            suma = sum(Matriz[i])
+            fila= [Matriz[i][j] /suma for j in range(len(Matriz[i]))]
+            self.matrix.append(np.array(fila))
+        self.matrix = np.array(self.matrix)
+        return self.matrix
         
         

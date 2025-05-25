@@ -41,5 +41,3 @@ class Markov:
         for _ in range(saltos):
             new_vector = np.dot(new_vector, self.matrix)
         return new_vector
-        
-        

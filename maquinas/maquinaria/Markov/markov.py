@@ -49,4 +49,4 @@ class Markov:
         self.matrix = np.array(self.matrix)
         return self.matrix
         
-        
+    

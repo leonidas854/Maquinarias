@@ -3,9 +3,9 @@ import numpy as np
 from EquipoEnt import EquipoEnt
 
 
-# Datos de ejemplo: [temperatura, vibración, presión]
+# Datos de mi empresa: [temperatura, cambios de coponentes, presión y porcentaje de uso]
 sensor_data = np.array([
-    [30, 2, 100],   # Paso 1: Estado normal
+    [30, 2, 100],   # Estos son ejeplos de datos no son los reales asi que por favor solo tomalo como eso, necesito Paso 1: Estado normal
     [35, 3, 110],   # Paso 2
     [40, 4, 120],   # Paso 3
     [50, 5, 130],   # Paso 4

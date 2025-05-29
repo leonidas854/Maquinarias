@@ -1,0 +1,44 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Coca-Cola Intranet</title>
+    <link rel="stylesheet" href="{% static 'estilo.css' %}">
+ 
+
+   
+</head>
+<body>
+
+    <div class="login-container">
+           
+        <!-- Reemplaza 'ruta/a/tu/logo-coca-cola.png' con la URL real de un logo de Coca-Cola -->
+        <!-- Puedes usar un SVG para mejor calidad: https://upload.wikimedia.org/wikipedia/commons/c/ce/Coca-Cola_logo.svg -->
+        <img src="https://upload.wikimedia.org/wikipedia/commons/c/ce/Coca-Cola_logo.svg" alt="Logo Coca-Cola" class="logo">
+
+        <h2>Acceso Interno</h2>
+
+        <form action="#" method="POST"> <!-- Cambia action="#" por tu endpoint de login -->
+            <div class="input-group">
+                <label for="username">Usuario o Email:</label>
+                <input type="text" id="username" name="username" required placeholder="ej: juan.perez@coca-cola.com">
+            </div>
+
+            <div class="input-group">
+                <label for="password">Contraseña:</label>
+                <input type="password" id="password" name="password" required placeholder="••••••••">
+            </div>
+
+            <button type="submit" class="btn-login">Ingresar</button>
+        </form>
+
+        <p class="footer-text">
+            ¿Problemas para ingresar? <a href="#">Contactar Soporte</a><br>
+            © <script>document.write(new Date().getFullYear());</script> The Coca-Cola Company. Todos los derechos reservados.
+        </p>
+    </div>
+
+</body>
+</html>

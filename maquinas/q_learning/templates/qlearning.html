@@ -1,0 +1,20 @@
+<div class="page-container qlearning-page">
+    <h2>Optimización con Q-Learning</h2>
+    <div class="form-group">
+        <label for="qlearning-maquina">Escoger Máquina:</label>
+        <select id="qlearning-maquina" name="qlearning-maquina">
+            <option value="">Seleccione una máquina...</option>
+            <option value="sistema_transporte_x">Sistema de Transporte X</option>
+            <option value="control_calidad_y">Control de Calidad Y</option>
+            <!-- Más opciones de máquinas -->
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="qlearning-dias">Periodo de Entrenamiento (Días):</label>
+        <input type="number" id="qlearning-dias" name="qlearning-dias" min="1" placeholder="Ej: 90">
+    </div>
+    <button id="qlearning-aplicar" class="btn btn-primary">Aplicar Cambios</button>
+    <div id="qlearning-results" class="results-area">
+        <!-- Los resultados de Q-Learning se podrían mostrar aquí -->
+    </div>
+</div>

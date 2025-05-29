@@ -1,0 +1,23 @@
+
+
+
+<div class="page-container manual-page">
+    <h2>Ajuste Manual de Parámetros</h2>
+    <div class="form-group">
+        <label for="manual-maquina">Escoger Máquina:</label>
+        <select id="manual-maquina" name="manual-maquina">
+            <option value="">Seleccione una máquina...</option>
+            <option value="linea_ensamblaje_z">Línea de Ensamblaje Z</option>
+            <option value="paletizadora_p1">Paletizadora P1</option>
+            <!-- Más opciones de máquinas -->
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="manual-parametro">Valor del Parámetro (Días/Unidad):</label>
+        <input type="text" id="manual-parametro" name="manual-parametro" placeholder="Ej: 15">
+    </div>
+    <button id="manual-aplicar" class="btn btn-primary">Aplicar Cambios</button>
+    <div id="manual-confirmation" class="results-area">
+        <!-- Confirmación de cambios manuales -->
+    </div>
+</div>

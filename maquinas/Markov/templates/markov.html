@@ -1,0 +1,40 @@
+{% extends 'index.html' %}
+{% load static %}
+
+{% block title %}Optimización con Cadenas de Markov{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'markov.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-container markov-page">
+    <h2>Optimización con Cadenas de Markov</h2>
+
+    <div class="form-group">
+        <label for="markov-maquina">Escoger Máquina:</label>
+        <select id="markov-maquina" name="markov-maquina">
+            <option value="">Seleccione una máquina...</option>
+            <option value="embotelladora_a1">Embotelladora A1</option>
+            <option value="etiquetadora_b2">Etiquetadora B2</option>
+            <option value="llenadora_c3">Llenadora C3</option>
+            <!-- Puedes agregar más máquinas aquí -->
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="markov-dias">Días de Simulación:</label>
+        <input type="number" id="markov-dias" name="markov-dias" min="1" placeholder="Ej: 30">
+    </div>
+
+    <button id="markov-aplicar" class="btn btn-primary">Aplicar Cambios</button>
+
+    <div id="markov-results" class="results-area">
+        <!-- Los resultados de la simulación se mostrarán aquí -->
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/markov.js' %}"></script>
+{% endblock %}

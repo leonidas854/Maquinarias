@@ -16,7 +16,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from Login import views
+from Reportes import views as re_vi
+from q_learning import views as q_vi
+from Markov import views as m_vi
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('',views.login),
+    path('reportes/',re_vi.reportes, name='reportes'),
+    path('qlearning/',q_vi.qlearning, name='qlearning'),
+    path('markov/',m_vi.markov, name='markov'),
 ]

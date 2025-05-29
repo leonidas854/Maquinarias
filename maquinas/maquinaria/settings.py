@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'Login',
     'Markov',
     'q_learning',
+    'Reportes'
 ]
 
 MIDDLEWARE = [

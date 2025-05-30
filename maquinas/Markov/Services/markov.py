@@ -39,7 +39,7 @@ class Markov:
         new_vector = self.vector
         for _ in range(saltos):
             new_vector = np.dot(new_vector, self.matrix)
-        return new_vector
+        return np.array(new_vector)
     def Convertir_Probabilidad(self,Matriz):
         self.matrix = []
         for i in range(len(Matriz)):

@@ -1,3 +1,7 @@
 from django.contrib import admin
+from .models import Lineas_Embotelladoras,Botella,Sabores
 
-# Register your models here.
+admin.site.register(Lineas_Embotelladoras)
+
+admin.site.register(Botella)
+admin.site.register(Sabores)

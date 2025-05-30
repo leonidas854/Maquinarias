@@ -9,18 +9,28 @@ class Lineas_Embotelladoras(models.Model):
     Temp_max = models.FloatField()
     Uso_operativo = models.FloatField()
     Criticidad = models.CharField(max_length=40)
+    
+    botellas = models.ManyToManyField('Botella', related_name='lineas')
+    def __str__(self):
+        return self.Nombre
+class Sabores(models.Model):
+    
+    Sabor = models.CharField(max_length=40)
+    Abrev = models.CharField(max_length=40)
+    def __str__(self):
+        return self.Sabor
 
 
 class Botella(models.Model):
-    Linea_id= models.ForeignKey('Lineas_Embotelladoras', on_delete=models.CASCADE,related_name="Botellas")
+   
     Nombre  = models.CharField(max_length=40)
     Cantidad  = models.IntegerField()
     Volumen  =  models.FloatField()
     Envase  =  models.CharField(max_length=40)
+    sabores = models.ManyToManyField(Sabores, related_name='botellas')
+    def __str__(self):
+        return self.Nombre
     
-class Sabores(models.Model):
-    Botella_id = models.ForeignKey('Botella', on_delete=models.CASCADE,related_name="Botellas")
-    Sabor = models.CharField(max_length=40)
-    Abrev = models.CharField(max_length=40)
+
     
     

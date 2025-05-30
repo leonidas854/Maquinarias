@@ -1,3 +1,6 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import Predice_estado
+
+
+admin.site.register(Predice_estado)

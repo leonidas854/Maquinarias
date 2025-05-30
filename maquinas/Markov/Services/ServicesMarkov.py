@@ -1,6 +1,6 @@
 from q_learning.models import Simulacion_estado
 from Reportes.models import Lineas_Embotelladoras
-from .Markov import Markov
+from .markov_ import Markov
 import numpy as np
 import pandas as pd
 from Markov.models import Predice_estado

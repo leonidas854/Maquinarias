@@ -4,13 +4,14 @@
         <span class="navbar-title">Portal de Operaciones</span>
     </div>
     <div class="navbar-links">
-        <a href="#markov" class="nav-link active" data-page="markov">Markov</a>
-        <a href="#qlearning" class="nav-link" data-page="qlearning">Q-Learning</a>
-        <a href="#manual" class="nav-link" data-page="manual">Manual</a>
-        <a href="#reports" class="nav-link" data-page="reports">Reportes</a>
-    </div>
+        <a class="nav-link" href="/markov/">Markov</a>
+<a class="nav-link" href="/qlearning/">Q-Learning</a>
+<a class="nav-link" href="/manual/">Modo Manual</a>
+<a class="nav-link" href="/reportes/">Reportes</a>
+
+
     <div class="navbar-user">
         <span id="welcome-message">¡Bienvenido, Usuario!</span>
-        <a href="/logout" class="nav-link logout-link">Cerrar Sesión</a>
+        <a href="{% url 'logout' %}">Cerrar sesión</a>
     </div>
 </nav>

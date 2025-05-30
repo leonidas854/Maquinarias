@@ -1,6 +1,5 @@
 {% extends 'index.html' %}
 {% load static %}
-
 {% block title %}Optimización con Cadenas de Markov{% endblock %}
 
 {% block extra_css %}
@@ -12,29 +11,99 @@
     <h2>Optimización con Cadenas de Markov</h2>
 
     <div class="form-group">
-        <label for="markov-maquina">Escoger Máquina:</label>
-        <select id="markov-maquina" name="markov-maquina">
-            <option value="">Seleccione una máquina...</option>
-            <option value="embotelladora_a1">Embotelladora A1</option>
-            <option value="etiquetadora_b2">Etiquetadora B2</option>
-            <option value="llenadora_c3">Llenadora C3</option>
-            <!-- Puedes agregar más máquinas aquí -->
-        </select>
+        <label for="linea-select">Seleccione su máquina:</label>
+        <select id="linea-select">
+    {% for linea in lineas %}
+        <option value="{{ linea.Nombre }}">{{ linea.Nombre }}</option>
+    {% endfor %}
+</select>
+
     </div>
+
+   <div class="estado-info">
+    <h4>Estado actual: <span id="estado-actual">-</span></h4>
+    <p>Estados posibles: <span id="estados-posibles">-</span></p>
+</div>
+
 
     <div class="form-group">
-        <label for="markov-dias">Días de Simulación:</label>
-        <input type="number" id="markov-dias" name="markov-dias" min="1" placeholder="Ej: 30">
+        <label for="saltos">Días de simulación:</label>
+        <input type="number" id="saltos" min="1" placeholder="Ej: 5">
     </div>
 
-    <button id="markov-aplicar" class="btn btn-primary">Aplicar Cambios</button>
+    <button id="btn-prediccion">Aplicar Cambios</button>
 
-    <div id="markov-results" class="results-area">
-        <!-- Los resultados de la simulación se mostrarán aquí -->
+    <div id="resultado-markov" class="matriz-resultado">
+        <!-- Se cargará aquí la tabla de resultados -->
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/markov.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const selectLinea = document.getElementById('linea-select');
+    const estadoActual = document.getElementById('estado-actual');
+    const estadosPosibles = document.getElementById('estados-posibles');
+
+    async function actualizarInfo() {
+        const seleccion = selectLinea.value;
+        if (!seleccion) {
+            estadoActual.textContent = '-';
+            estadosPosibles.textContent = '-';
+            return;
+        }
+
+        const response = await fetch(`/markov/estado-actual/?linea=${encodeURIComponent(seleccion)}`);
+        const data = await response.json();
+
+        estadoActual.textContent = data.estado_actual || 'Sin datos';
+        estadosPosibles.textContent = data.estados_posibles?.join(', ') || '-';
+    }
+
+    selectLinea.addEventListener('change', actualizarInfo);
+    actualizarInfo();
+});
+</script>
+<script>
+document.getElementById('btn-prediccion').addEventListener('click', async () => {
+    const linea = document.getElementById('linea-select').value;
+    const saltos = document.getElementById('saltos').value;
+
+    if (!linea || !saltos) {
+        alert("Seleccione una línea y defina los días de simulación.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('linea', linea);
+    formData.append('saltos', saltos);
+
+    const response = await fetch("{% url 'predecir_markov' %}", {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: formData
+    });
+
+    const data = await response.json();
+
+    if (data.error) {
+        document.getElementById('resultado-markov').innerHTML = `<p style="color:red;">${data.error}</p>`;
+        return;
+    }
+
+    let html = `<h4>Estado Actual: ${data.Estado_actual}</h4>`;
+    html += `<table border="1" cellpadding="8"><tr><th>Estado</th><th>Probabilidad (%)</th></tr>`;
+    data.detalles.forEach(e => {
+        html += `<tr><td>${e.estado}</td><td>${(e.probabilidad * 100).toFixed(2)}</td></tr>`;
+    });
+    html += `</table>`;
+
+    document.getElementById('resultado-markov').innerHTML = html;
+});
+</script>
+
+
 {% endblock %}

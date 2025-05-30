@@ -40,13 +40,16 @@ class Markov:
         for _ in range(saltos):
             new_vector = np.dot(new_vector, self.matrix)
         return np.array(new_vector)
-    def Convertir_Probabilidad(self,Matriz):
+    def Convertir_Probabilidad(self, Matriz):
         self.matrix = []
         for i in range(len(Matriz)):
             suma = sum(Matriz[i])
-            fila= [Matriz[i][j] /suma for j in range(len(Matriz[i]))]
+            if suma == 0:
+                
+                fila = [0 for _ in range(len(Matriz[i]))]
+            else:
+                fila = [Matriz[i][j] / suma for j in range(len(Matriz[i]))]
             self.matrix.append(np.array(fila))
+
         self.matrix = np.array(self.matrix)
         return self.matrix
-        
-    

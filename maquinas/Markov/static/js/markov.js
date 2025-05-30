@@ -1,4 +1,4 @@
-function initMarkovPage() {
+document.addEventListener('DOMContentLoaded', () => {
     const aplicarBtn = document.getElementById('markov-aplicar');
     const maquinaSelect = document.getElementById('markov-maquina');
     const diasInput = document.getElementById('markov-dias');
@@ -18,13 +18,8 @@ function initMarkovPage() {
                 return;
             }
 
-            console.log('Markov - Aplicar Cambios:', { maquina, dias });
             resultsDiv.innerHTML = `<p>Procesando simulación Markov para <strong>${maquina}</strong> por <strong>${dias} días</strong>...</p>
                                     <p><em>(Aquí se mostrarían los resultados reales)</em></p>`;
-            // Aquí iría la lógica para llamar a un backend o realizar cálculos
         });
     }
-}
-
-// Si main.js carga este script después de que el DOM esté listo, no necesitas DOMContentLoaded aquí.
-// Si se carga en el head, sí lo necesitarías o llamar a initMarkovPage desde main.js.
+});

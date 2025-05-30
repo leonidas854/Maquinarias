@@ -20,24 +20,29 @@
 
         <h2>Acceso Interno</h2>
 
-        <form action="#" method="POST"> <!-- Cambia action="#" por tu endpoint de login -->
-            <div class="input-group">
-                <label for="username">Usuario o Email:</label>
-                <input type="text" id="username" name="username" required placeholder="ej: juan.perez@coca-cola.com">
-            </div>
+        <!-- ...código existente... -->
 
-            <div class="input-group">
-                <label for="password">Contraseña:</label>
-                <input type="password" id="password" name="password" required placeholder="••••••••">
-            </div>
+<form action="{% url 'login' %}" method="POST">
+    {% csrf_token %}
+    <div class="input-group">
+        <label for="username">Usuario o Email:</label>
+        <input type="text" id="username" name="username" required placeholder="ej: juan.perez@coca-cola.com">
+    </div>
 
-            <button type="submit" class="btn-login">Ingresar</button>
-        </form>
+    <div class="input-group">
+        <label for="password">Contraseña:</label>
+        <input type="password" id="password" name="password" required placeholder="••••••••">
+    </div>
 
-        <p class="footer-text">
-            ¿Problemas para ingresar? <a href="#">Contactar Soporte</a><br>
-            © <script>document.write(new Date().getFullYear());</script> The Coca-Cola Company. Todos los derechos reservados.
-        </p>
+    <button type="submit" class="btn-login">Ingresar</button>
+</form>
+
+<p class="footer-text">
+    ¿No tienes una cuenta? <a href="{% url 'register' %}">Registrar usuario</a><br>
+    ¿Problemas para ingresar? <a href="#">Contactar Soporte</a><br>
+    © <script>document.write(new Date().getFullYear());</script> The Coca-Cola Company. Todos los derechos reservados.
+</p>
+
     </div>
 
 </body>

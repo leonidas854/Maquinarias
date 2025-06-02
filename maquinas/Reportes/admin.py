@@ -11,7 +11,7 @@ class SaborAdmin(admin.ModelAdmin):
 
 @admin.register(Botella)
 class BotellaAdmin(admin.ModelAdmin):
-    list_display = ('Nombre', 'Cantidad', 'Volumen', 'Envase', 'mostrar_sabores')
+    list_display = ('Nombre',  'Envase', 'Abre_envase','Volumen','mostrar_sabores')
     search_fields = ('Nombre', 'Envase')
     filter_horizontal = ('sabores',)
 

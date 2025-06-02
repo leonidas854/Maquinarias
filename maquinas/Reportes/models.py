@@ -23,14 +23,15 @@ class Sabores(models.Model):
 
 
 class Botella(models.Model):
-   
     Nombre  = models.CharField(max_length=40)
-    Cantidad  = models.IntegerField()
-    Volumen  =  models.FloatField()
     Envase  =  models.CharField(max_length=40)
-    sabores = models.ManyToManyField(Sabores, related_name='botellas')
+    Abre_envase = models.CharField(max_length=40)
+    Volumen = models.FloatField()
+    sabores = models.ManyToManyField(Sabores, related_name='Botellas')
     def __str__(self):
         return self.Nombre
+
+
     
 
     

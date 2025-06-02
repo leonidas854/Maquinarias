@@ -15,7 +15,6 @@ class Lineas_Embotelladoras(models.Model):
     def __str__(self):
         return self.Nombre
 class Sabores(models.Model):
-    
     Sabor = models.CharField(max_length=40)
     Abrev = models.CharField(max_length=40)
     def __str__(self):

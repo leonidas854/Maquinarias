@@ -22,7 +22,7 @@ obs, _ = env.reset()  # Devuelve (obs, info)
 for _ in range(len(new_sensor_data)):
     # Predecir la acción óptima con el modelo
     action, _ = model.predict(obs, deterministic=True)  # deterministic=True para evitar aleatoriedad
-
+ 
     # Ejecutar la acción en el entorno
     obs, reward, terminated, truncated, info = env.step(action)
 

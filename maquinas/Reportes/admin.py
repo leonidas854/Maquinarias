@@ -19,7 +19,6 @@ class BotellaAdmin(admin.ModelAdmin):
         return ", ".join([s.Sabor for s in obj.sabores.all()])
     mostrar_sabores.short_description = 'Sabores'
 
-
 @admin.register(Lineas_Embotelladoras)
 class LineasAdmin(admin.ModelAdmin):
     list_display = (
@@ -38,3 +37,4 @@ class LineasAdmin(admin.ModelAdmin):
     def mostrar_usuarios(self, obj):
         return ", ".join([u.username for u in obj.usuarios.all()])
     mostrar_usuarios.short_description = 'Usuarios Asignados'
+

@@ -1,3 +1,4 @@
+
 from q_learning.models import Simulacion_estado
 from Reportes.models import Lineas_Embotelladoras
 from .markov_ import Markov
@@ -74,6 +75,11 @@ class ServicesMarkov:
         except Exception as e:
             print("Error en construir_matriz_transicion:", str(e))
             return None
+    def get_matriz_probabilistica(self):
+        markov = Markov()
+        vector = self.get_vector_estados()
+        matriz = self.construir_matriz_transicion()
+        return markov.Convertir_Probabilidad(matriz)
 
     def Resolver_probabilidad(self, saltos: int):
         try:

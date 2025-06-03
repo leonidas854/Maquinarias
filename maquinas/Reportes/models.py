@@ -10,6 +10,8 @@ class Lineas_Embotelladoras(models.Model):
     Temp_max = models.FloatField()
     Uso_operativo = models.FloatField()
     Criticidad = models.CharField(max_length=40)
+    Presion_base = models.FloatField()
+    Presion_maxima  = models.FloatField()
     botellas = models.ManyToManyField('Botella', related_name='lineas')
     usuarios = models.ManyToManyField(User, related_name="lineas_asignadas")
     def __str__(self):

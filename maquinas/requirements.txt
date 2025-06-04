@@ -1,0 +1,7 @@
+numpy
+django
+psycopg2-binary
+pandas
+gymnasium
+stable-baselines3
+websocket

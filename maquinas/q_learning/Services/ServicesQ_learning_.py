@@ -6,7 +6,7 @@ from Reportes.models import Lineas_Embotelladoras
 import numpy as np
 class ServicesQ_learning():
     def __init__(self,Name_linea:str =None) :
-        self.Name_linea = Name_linea
+        self.Name_linea = Name_linea if Name_linea is not None else None
         self._actualizar_configuracion(Name_linea)
         
     def set_Linea(self,Name_linea:str):
@@ -16,15 +16,16 @@ class ServicesQ_learning():
     def _actualizar_configuracion(self, Name_linea):
         markov_service = ServicesMarkov(Name_linea)
         self.Matriz = markov_service.get_matriz_probabilistica()
-        self.Estados = {i: estado for i, estado in enumerate(markov_service.get_estados())}
+        self.Estados = {i: estado for i, estado in 
+                        enumerate(markov_service.get_estados())}
         self.Linea_Config = Lineas_Embotelladoras.objects.filter(Nombre=Name_linea).values(
             'bph', 'Fecha_mantenimiento', 'Temp_min', 'Temp_max',
             'Uso_operativo', 'Criticidad','Presion_base', 'Presion_maxima'
         ).first()
-        Estado_invertido = {v: k for k, v in self.Estados.items()}
+        self.Estado_invertido = {v: k for k, v in self.Estados.items()}
         ultimo_estado_info = markov_service.get_ultimo_estado()
         if 'estado' in ultimo_estado_info:
-            self.estado_actual = Estado_invertido.get(ultimo_estado_info['estado']) 
+            self.estado_actual = self.Estado_invertido.get(ultimo_estado_info['estado']) 
 
         self.Estabilizador_euler = 10
 
@@ -100,26 +101,33 @@ class ServicesQ_learning():
         delta_estado = self.delta_presion_estado(estado)
         return np.clip(base_presion + delta_estado, 0, self.Linea_Config["Presion_maxima"])
     
-    def Simulacion_Completa(self,t):
-        #los datos entran por dias
-        t = t *24
-        t_range =  np.arange(0, t, 1)
-        estado =  self.estado_actual
-        estados,usos,temperaturas,presiones = [],[],[],[]
+    def Simulacion_Completa(self, t_dias):
+        t_range = np.arange(0, t_dias * 24, 1)  
+        estado = self.estado_actual
+        duracion_restante = np.random.randint(12, 25)
+        estados, usos, temperaturas, presiones = [], [], [], []
         for t in t_range:
+            if duracion_restante <= 0:
+                estado = self.Siguiente_estado(estado, self.Matriz)
+                duracion_restante = np.random.randint(12, 25)
             uso = self.simular_uso(t, estado)
-            temp = self.Simular_temperatura(t,uso,estado)
+            temp = self.Simular_temperatura(t, uso, estado)
             pres = self.simular_presion(temp, uso, estado)
+
             estados.append(self.Estados[estado])
             usos.append(uso)
             temperaturas.append(temp)
             presiones.append(pres)
-            estado = self.Siguiente_estado(estado, self.Matriz)
-        df_sim = pd.DataFrame({'Hora':t_range,
-                               'Estado':estados,
-                               'Uso':usos,
-                               'Temperatura':temperaturas,
-                               'Presion':presiones})
-        return df_sim
+
+            duracion_restante -= 1
+
+        return pd.DataFrame({
+            'Hora': t_range,
+            'Estado': estados,
+            'Uso': usos,
+            'Temperatura': temperaturas,
+            'Presion': presiones
+        })
+
         
         

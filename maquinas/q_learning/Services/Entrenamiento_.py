@@ -68,12 +68,12 @@ class Entrenamiento():
             self.multi_env,
             verbose=1,
             learning_rate=0.0003,
-            n_steps=256,
-            batch_size=32
+            n_steps=512,
+            batch_size=64
             )
-        model.learn(total_timesteps=100_000)
+        model.learn(total_timesteps=1_000_000)
         
-        model.save("modelo_multilinea")
+        model.save("modelo_multilinea2")
     
     
     

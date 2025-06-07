@@ -1,0 +1,250 @@
+{% extends 'index.html' %}
+{% load static %}
+
+{% block title %}Dashboard: {{ linea.Nombre }}{% endblock %}
+
+{% block extra_css %}
+    <!-- CSS de Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Estilos personalizados para esta página -->
+    <style>
+        body { background-color: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        .page-container { padding: 1.5rem; }
+        .card { margin-top: 20px; border: none; border-radius: 0.75rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .card-header { background-color: #fff; border-bottom: 1px solid #e9ecef; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .recommendation-badge { font-size: 1.1rem; padding: 0.5em 1em; text-transform: uppercase; letter-spacing: 1px; }
+        .decision-buttons { display: none; margin-top: 15px; gap: 10px; }
+        #realtimeChart, #simulationChart { max-height: 280px; }
+        #eventLog { height: 250px; overflow-y: scroll; background-color: #212529; color: #adb5bd; font-family: monospace; font-size: 0.8rem; padding: 10px; border-radius: 5px; white-space: pre-wrap; }
+        .log-in { color: #28a745; } .log-out { color: #ffc107; } .log-error { color: #dc3545; font-weight: bold; } .log-info { color: #17a2b8; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <h1 class="mb-4">Dashboard de Monitoreo: <span class="text-primary">{{ linea.Nombre }}</span></h1>
+    <div class="row">
+        <!-- Columna de Monitoreo y Decisiones -->
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header">Monitoreo y Decisión</div>
+                <div class="card-body">
+                    <div class="row text-center mb-3">
+                        <div class="col-4"><h6>Uso</h6><p class="fs-4 fw-bold text-success" id="uso">-- %</p></div>
+                        <div class="col-4"><h6>Temperatura</h6><p class="fs-4 fw-bold text-warning" id="temp">-- °C</p></div>
+                        <div class="col-4"><h6>Presión</h6><p class="fs-4 fw-bold text-primary" id="pres">-- bar</p></div>
+                    </div>
+                    <canvas id="realtimeChart"></canvas>
+                    <hr class="my-4">
+                    <div class="text-center" id="decision-area">
+                        <h5>Recomendación del Modelo IA</h5>
+                        <div id="recommendation-wrapper" class="mb-2">
+                            <span id="recommendation" class="badge bg-secondary recommendation-badge">Conectando...</span>
+                            <span id="recompensa" class="ms-2 text-muted"></span>
+                        </div>
+                        <div id="decision-buttons" class="justify-content-center">
+                            <button class="btn btn-success" id="acceptBtn">Aceptar Recomendación</button>
+                            <button class="btn btn-danger" id="overrideBtn" data-bs-toggle="modal" data-bs-target="#overrideModal">Anular / Intervenir</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">Simulación Proactiva</div>
+                <div class="card-body">
+                    <div class="input-group mb-3"><span class="input-group-text">Simular Próximas</span><input type="number" class="form-control" id="horas" value="24" min="1"><span class="input-group-text">Horas</span><button class="btn btn-primary" id="simulateBtn" type="button">Simular</button></div>
+                    <canvas id="simulationChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna de Logs -->
+        <div class="col-lg-5">
+            <div class="card" style="height: calc(100% - 20px);">
+                <div class="card-header">Log de Eventos</div>
+                <div class="card-body" style="display: flex; flex-direction: column;">
+                    <div id="eventLog" style="flex-grow: 1;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Intervención Humana -->
+<div class="modal fade" id="overrideModal" tabindex="-1" aria-labelledby="overrideModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="overrideModalLabel">Anular Recomendación de la IA</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <p>La IA recomendó: <strong id="ia-recommendation-modal"></strong></p>
+        <div class="mb-3"><label for="human-action" class="form-label">Seleccione su acción:</label><select class="form-select" id="human-action"><option>Forzar Mantenimiento</option><option>Forzar Parada</option><option>Forzar Operativa</option><option>Ignorar Alerta</option></select></div>
+        <div class="mb-3"><label for="human-comment" class="form-label">Comentario (requerido para anulación):</label><textarea class="form-control" id="human-comment" rows="3" placeholder="Ej: Ruido detectado en el motor principal."></textarea></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button type="button" class="btn btn-danger" id="confirmOverrideBtn">Confirmar Anulación</button></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Primero, carga las librerías externas de las que depende tu script -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Después, ejecuta tu propio código -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    const lineaNombre = JSON.parse(document.getElementById('linea-nombre-data').textContent);
+    const wsProtocol = window.location.protocol === 'https' ? 'wss' : 'ws';
+    const final_socket_url = `${wsProtocol}://${window.location.host}/ws/maquina/${encodeURIComponent(lineaNombre)}/`;
+    const socket = new WebSocket(final_socket_url);
+
+    let currentEventId = null;
+
+    const eventLog = document.getElementById('eventLog');
+    const decisionButtons = document.getElementById('decision-buttons');
+    const acceptBtn = document.getElementById('acceptBtn');
+    const confirmOverrideBtn = document.getElementById('confirmOverrideBtn');
+    const iaRecommendationModal = document.getElementById('ia-recommendation-modal');
+    const simulateBtn = document.getElementById('simulateBtn');
+
+    function logEvent(message, type = 'info') {
+        const now = new Date();
+        const timestamp = now.toLocaleTimeString();
+        const logClass = `log-${type}`;
+        eventLog.innerHTML += `<div class="${logClass}">[${timestamp}] ${message}</div>`;
+        eventLog.scrollTop = eventLog.scrollHeight;
+    }
+
+    const rtCtx = document.getElementById('realtimeChart').getContext('2d');
+    const realtimeChart = new Chart(rtCtx, { type: 'line', data: { labels: [], datasets: [ { label: 'Uso (%)', data: [], borderColor: 'rgba(25, 135, 84, 1)', tension: 0.3, borderWidth: 2, pointRadius: 0 }, { label: 'Temperatura (°C)', data: [], borderColor: 'rgba(255, 193, 7, 1)', tension: 0.3, borderWidth: 2, pointRadius: 0 }, { label: 'Presión (bar)', data: [], borderColor: 'rgba(13, 110, 253, 1)', tension: 0.3, borderWidth: 2, pointRadius: 0 } ]}, options: { animation: { duration: 500 }, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: true, position: 'top' } } } });
+
+    function updateRealtimeChart(data) {
+        const labels = realtimeChart.data.labels;
+        labels.push(new Date().toLocaleTimeString());
+        if (labels.length > 20) { labels.shift(); realtimeChart.data.datasets.forEach(dataset => dataset.data.shift()); }
+        realtimeChart.data.datasets[0].data.push(data.uso);
+        realtimeChart.data.datasets[1].data.push(data.temperatura);
+        realtimeChart.data.datasets[2].data.push(data.presion);
+        realtimeChart.update('none');
+    }
+    
+    let simulationChart;
+    function updateSimulationChart(data) {
+        simulateBtn.disabled = false;
+        simulateBtn.innerHTML = 'Simular';
+        const simCtx = document.getElementById('simulationChart').getContext('2d');
+        if (simulationChart) { simulationChart.destroy(); }
+        simulationChart = new Chart(simCtx, { type: 'line', data: { labels: data.map(d => `H+${d.hora}`), datasets: [ { label: 'Temp. Predicha (°C)', data: data.map(d => d.temperatura), borderColor: 'red', yAxisID: 'y' }, { label: 'Presión Predicha (bar)', data: data.map(d => d.presion), borderColor: 'blue', yAxisID: 'y' }, { label: 'Uso Predicho (%)', data: data.map(d => d.uso), borderColor: 'green', yAxisID: 'y1', pointStyle: 'rect' } ]}, options: { scales: { y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Temp / Presión' } }, y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'Uso (%)' }, grid: { drawOnChartArea: false } } } } });
+    }
+
+    function lockDecision() {
+        decisionButtons.style.display = 'none';
+    }
+
+    function unlockDecision(recommendation) {
+        iaRecommendationModal.textContent = recommendation;
+        decisionButtons.style.display = 'flex';
+    }
+
+    socket.onopen = () => {
+        logEvent('Conexión WebSocket establecida.', 'info');
+        setInterval(sendRealtimeData, 3000);
+    };
+
+    socket.onclose = () => {
+        logEvent('Conexión WebSocket cerrada.', 'error');
+        document.getElementById('recommendation').textContent = "Desconectado";
+        document.getElementById('recommendation').className = 'badge bg-dark recommendation-badge';
+    };
+
+    socket.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        logEvent(`IN: ${e.data}`, 'in');
+
+        if (data.type === 'realtime_recommendation') {
+            currentEventId = data.evento_id;
+            document.getElementById('recommendation').textContent = data.recommendation;
+            document.getElementById('recompensa').textContent = `(Recompensa: ${data.recompensa_estimada})`;
+            unlockDecision(data.recommendation);
+            
+            const badge = document.getElementById('recommendation');
+            if (data.action_id === 2) { badge.className = 'badge bg-danger recommendation-badge'; }
+            else if (data.action_id === 5) { badge.className = 'badge bg-success recommendation-badge'; }
+            else { badge.className = 'badge bg-warning text-dark recommendation-badge'; }
+
+        } else if (data.type === 'future_simulation_result') {
+            updateSimulationChart(data.simulation_data);
+        } else if (data.type === 'decision_guardada') {
+            logEvent(`Confirmación recibida: ${data.message}`, 'info');
+        } else if (data.type === 'error') {
+            logEvent(`ERROR del servidor: ${data.message}`, 'error');
+        }
+    };
+
+    acceptBtn.addEventListener('click', () => {
+        if (currentEventId) {
+            const message = { type: 'decision_confirmada', payload: { evento_id: currentEventId, decision: 'aceptada' }};
+            socket.send(JSON.stringify(message));
+            logEvent(`OUT: ${JSON.stringify(message)}`, 'out');
+            lockDecision();
+        }
+    });
+
+    confirmOverrideBtn.addEventListener('click', () => {
+        const humanAction = document.getElementById('human-action').value;
+        const humanComment = document.getElementById('human-comment').value;
+
+        if (!humanComment) {
+            alert('El comentario es obligatorio para anular la recomendación.');
+            return;
+        }
+
+        if (currentEventId) {
+            const message = { type: 'decision_confirmada', payload: { evento_id: currentEventId, decision: 'anulada', accion_humana: humanAction, comentario: humanComment }};
+            socket.send(JSON.stringify(message));
+            logEvent(`OUT: ${JSON.stringify(message)}`, 'out');
+            lockDecision();
+            
+            const modal = bootstrap.Modal.getInstance(document.getElementById('overrideModal'));
+            modal.hide();
+        }
+    });
+
+    function sendRealtimeData() {
+        if (socket.readyState === WebSocket.OPEN) {
+            const fakeData = {
+                uso: Math.random() * 20 + 75,
+                temperatura: 60 + Math.random() * 30,
+                presion: 100 + Math.random() * 50
+            };
+            
+            document.getElementById('uso').textContent = `${fakeData.uso.toFixed(1)} %`;
+            document.getElementById('temp').textContent = `${fakeData.temperatura.toFixed(1)} °C`;
+            
+            document.getElementById('pres').textContent = `${fakeData.presion.toFixed(1)} bar`;
+            
+            updateRealtimeChart(fakeData);
+
+            const message = { type: 'realtime_update', payload: fakeData };
+            socket.send(JSON.stringify(message));
+            logEvent(`OUT: ${JSON.stringify(message)}`, 'out');
+        }
+    }
+
+    simulateBtn.onclick = () => {
+        simulateBtn.disabled = true;
+        simulateBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Simulando...';
+        
+        const horas = document.getElementById('horas').value;
+        const message = { type: 'simulate_future', payload: { horas: parseInt(horas) } };
+        socket.send(JSON.stringify(message));
+        logEvent(`OUT: ${JSON.stringify(message)}`, 'out');
+    };
+});
+</script>
+{{ linea.Nombre|json_script:"linea-nombre-data" }}
+
+{% endblock %}

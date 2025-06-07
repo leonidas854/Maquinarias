@@ -4,4 +4,9 @@ psycopg2-binary
 pandas
 gymnasium
 stable-baselines3
-websocket
+websocket-client
+tensorboard
+django-channels
+channels-redis
+daphne
+ 

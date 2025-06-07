@@ -1,0 +1,62 @@
+{% extends 'index.html' %}
+{% load static %}
+
+{% block title %}Seleccionar Máquina para Monitoreo{% endblock %}
+
+{% block extra_css %}
+    <!-- Bootstrap 5 para un diseño limpio -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card text-center shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h2>Sistema de Mantenimiento Predictivo con IA</h2>
+                </div>
+                <div class="card-body p-4">
+                    <h5 class="card-title">Seleccione una Máquina para Monitorear</h5>
+                    <p class="card-text">
+                        Elija una línea embotelladora de la lista para ver su estado en tiempo real, recibir recomendaciones de nuestro modelo de IA y ejecutar simulaciones proactivas.
+                    </p>
+                    <div class="mb-3">
+                        <select id="linea-select" class="form-select form-select-lg">
+                            <option value="">Seleccione una máquina...</option>
+                            {% for linea in lineas %}
+                                <option value="{{ linea.Nombre }}">{{ linea.Nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button id="monitor-btn" class="btn btn-primary btn-lg" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-display" viewBox="0 0 16 16" style="vertical-align: text-bottom; margin-right: 8px;"><path d="M0 4s0-2 2-2h12s2 0 2 2v6s0 2-2 2h-4q0 1 .25 1.5H11a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1h2.75q.25-.5.25-1.5H2s-2 0-2-2zm1.398-.855a.758.758 0 0 0-.254.302A1.46 1.46 0 0 0 1 4.01V10c0 .325.078.502.145.602.07.101.156.187.254.254a1.46 1.46 0 0 0 .592.302h11.996c.266 0 .435-.07.592-.302a.758.758 0 0 0 .254-.254c.067-.1.145-.277.145-.602V4.01c0-.325-.078-.502-.145-.602a.758.758 0 0 0-.254-.302A1.46 1.46 0 0 0 13.996 3H2.004c-.266 0-.435.07-.592.302z"/></svg>
+                        Ir al Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const select = document.getElementById('linea-select');
+    const button = document.getElementById('monitor-btn');
+
+    select.addEventListener('change', () => {
+        button.disabled = !select.value;
+    });
+
+     button.addEventListener('click', () => {
+        const selectedLinea = select.value;
+        if (selectedLinea) {
+          
+            window.location.href = `/qlearning/dashboard/${selectedLinea}/`;
+        }
+    });
+});
+</script>
+{% endblock %}

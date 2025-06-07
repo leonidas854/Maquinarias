@@ -25,6 +25,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('',include('Login.urls')),
     path('reportes/',re_vi.reportes, name='reportes'),
-    path('qlearning/',q_vi.qlearning, name='qlearning'),
+    path('qlearning/',include('q_learning.urls')),
     path('markov/',include('Markov.urls')),
+    
 ]

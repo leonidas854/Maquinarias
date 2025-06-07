@@ -4,36 +4,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Dashboard Coca-Cola{% endblock %}</title>
+    <title>{% block title %}Portal de Operaciones{% endblock %}</title>
 
-    <!-- CSS global -->
+    <!-- CSS Global -->
     <link rel="stylesheet" href="{% static 'global.css' %}">
     <link rel="stylesheet" href="{% static 'navbar.css' %}">
+    <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
 
-    <!-- CSS específicos (sobrescribibles) -->
-    {% block extra_css %}
-    {% endblock %}
+    <!-- Bloque para que las páginas hijas añadan su propio CSS -->
+    {% block extra_css %}{% endblock %}
 </head>
-<link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
 <body>
-     <header id="navbar-container">
+    <header id="navbar-container">
+        <!-- Incluimos la barra de navegación que nos proporcionaste -->
         {% include 'includes/navbar.html' %}
     </header>
 
     <main id="main-content">
-        {% block content %}
-        {% endblock %}
+        <!-- El contenido principal de cada página se insertará aquí -->
+        {% block content %}{% endblock %}
     </main>
 
     <footer>
-        <p>© <script>document.write(new Date().getFullYear())</script> The Coca-Cola Company. Intranet de Operaciones.</p>
+        <p>© {% now "Y" %} The Coca-Cola Company. Intranet de Operaciones.</p>
     </footer>
 
-    <!-- JS global -->
+    <!-- JS Global (si tienes uno) -->
     <script src="{% static 'js/main.js' %}"></script>
 
-    <!-- JS específicos (sobrescribibles) -->
-    {% block extra_js %}
-    {% endblock %}
+    <!-- Bloque para que las páginas hijas añadan su propio JavaScript -->
+    {% block extra_js %}{% endblock %}
+
 </body>
 </html>

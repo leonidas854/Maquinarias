@@ -1,17 +1,27 @@
+<!-- templates/includes/navbar.html -->
 <nav class="navbar">
     <div class="navbar-brand">
-     
         <span class="navbar-title">Portal de Operaciones</span>
     </div>
     <div class="navbar-links">
         <a class="nav-link" href="/markov/">Markov</a>
-<a class="nav-link" href="/qlearning/">Q-Learning</a>
-<a class="nav-link" href="/manual/">Modo Manual</a>
-<a class="nav-link" href="/reportes/">Reportes</a>
-
-
+        <a class="nav-link" href="/qlearning/">Q-Learning</a>
+        <a class="nav-link" href="/manual/">Modo Manual</a>
+        <a class="nav-link" href="/reportes/">Reportes</a>
+    </div>
     <div class="navbar-user">
-        <span id="welcome-message">¡Bienvenido, Usuario!</span>
-        <a href="{% url 'logout' %}">Cerrar sesión</a>
+        <!-- Es mejor usar el objeto de usuario de Django si está disponible -->
+        <span id="welcome-message">
+            {% if user.is_authenticated %}
+                ¡Bienvenido, {{ user.username }}!
+            {% else %}
+                ¡Bienvenido, Invitado!
+            {% endif %}
+        </span>
+        {% if user.is_authenticated %}
+            <a href="{% url 'logout' %}">Cerrar sesión</a>
+        {% else %}
+            <a href="{% url 'login' %}">Iniciar sesión</a>
+        {% endif %}
     </div>
 </nav>

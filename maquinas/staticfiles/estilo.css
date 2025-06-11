@@ -1,0 +1,92 @@
+ body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5; /* Un gris claro, común en logins */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .login-container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            border-top: 5px solid #E61D2B; /* Rojo Coca-Cola */
+        }
+
+        .logo {
+            max-width: 200px; /* Ajusta según el tamaño de tu logo */
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            color: #333333;
+            margin-bottom: 25px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            color: #555555;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #dddddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #E61D2B; /* Rojo Coca-Cola al enfocar */
+            box-shadow: 0 0 0 0.2rem rgba(230, 29, 43, 0.25);
+        }
+
+        .btn-login {
+            background-color: #E61D2B; /* Rojo Coca-Cola */
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-login:hover {
+            background-color: #c01722; /* Un rojo más oscuro al pasar el mouse */
+        }
+
+        .footer-text {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #777777;
+        }
+
+        .footer-text a {
+            color: #E61D2B;
+            text-decoration: none;
+        }
+        .footer-text a:hover {
+            text-decoration: underline;
+        }

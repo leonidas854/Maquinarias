@@ -2,38 +2,111 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Portal de Operaciones{% endblock %}</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Portal de Operaciones{% endblock %}</title>
 
-    <!-- CSS Global -->
-    <link rel="stylesheet" href="{% static 'global.css' %}">
-    <link rel="stylesheet" href="{% static 'navbar.css' %}">
-    <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
+  <style>
+    :root {
+      --coca-cola-red: #E61D2B;
+      --coca-cola-white: #FEFEFE;
+      --dark-gray: #333;
+      --light-gray: #f4f4f4;
+      --text-color: #2c3e50;
+      --font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
 
-    <!-- Bloque para que las páginas hijas añadan su propio CSS -->
-    {% block extra_css %}{% endblock %}
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font-family);
+      background-color: var(--light-gray);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background-color: var(--coca-cola-red);
+      color: var(--coca-cola-white);
+      padding: 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+    }
+
+    .navbar-title {
+      font-size: 1.4em;
+      font-weight: bold;
+    }
+
+    .navbar-links .nav-link {
+      color: var(--coca-cola-white);
+      text-decoration: none;
+      margin: 0 10px;
+      padding: 6px 10px;
+      border-radius: 4px;
+    }
+
+    .navbar-links .nav-link:hover {
+      background-color: var(--coca-cola-white);
+      color: var(--coca-cola-red);
+    }
+
+    main {
+      flex: 1; /* ESTO es clave */
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    footer {
+      background-color: var(--dark-gray);
+      color: var(--coca-cola-white);
+      text-align: center;
+      padding: 15px 0;
+      font-size: 0.9em;
+    }
+  </style>
+
+  {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <header id="navbar-container">
-        <!-- Incluimos la barra de navegación que nos proporcionaste -->
-        {% include 'includes/navbar.html' %}
-    </header>
+  <header>
+    <nav class="navbar">
+      <div class="navbar-title">Portal de Operaciones</div>
+      <div class="navbar-links">
+        <a href="/markov/" class="nav-link">Markov</a>
+        <a href="/qlearning/" class="nav-link">Q-Learning</a>
+        <a href="/manual/" class="nav-link">Modo Manual</a>
+        <a href="/reportes/" class="nav-link">Reportes</a>
+      </div>
+    </nav>
+  </header>
 
-    <main id="main-content">
-        <!-- El contenido principal de cada página se insertará aquí -->
-        {% block content %}{% endblock %}
-    </main>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
 
-    <footer>
-        <p>© {% now "Y" %} The Coca-Cola Company. Intranet de Operaciones.</p>
-    </footer>
+  <footer>
+    <p>© {% now "Y" %} The Coca-Cola Company. Intranet de Operaciones.</p>
+  </footer>
 
-    <!-- JS Global (si tienes uno) -->
-    <script src="{% static 'js/main.js' %}"></script>
-
-    <!-- Bloque para que las páginas hijas añadan su propio JavaScript -->
-    {% block extra_js %}{% endblock %}
-
+  <!--<script src="{% static 'js/main.js' %}"></script>-->
+  {% block extra_js %}{% endblock %}
 </body>
 </html>

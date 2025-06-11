@@ -4,10 +4,7 @@
 {% block title %}Dashboard: {{ linea.Nombre }}{% endblock %}
 
 {% block extra_css %}
-    <!-- CSS de Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Estilos personalizados para esta página -->
     <style>
         body { background-color: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
         .page-container { padding: 1.5rem; }
@@ -15,7 +12,7 @@
         .card-header { background-color: #fff; border-bottom: 1px solid #e9ecef; font-weight: 600; display: flex; align-items: center; gap: 10px; }
         .recommendation-badge { font-size: 1.1rem; padding: 0.5em 1em; text-transform: uppercase; letter-spacing: 1px; }
         .decision-buttons { display: none; margin-top: 15px; gap: 10px; }
-        #realtimeChart, #simulationChart { max-height: 280px; }
+        #realtimeChart, #realSensorChart, #simulationChart { max-height: 250px; }
         #eventLog { height: 250px; overflow-y: scroll; background-color: #212529; color: #adb5bd; font-family: monospace; font-size: 0.8rem; padding: 10px; border-radius: 5px; white-space: pre-wrap; }
         .log-in { color: #28a745; } .log-out { color: #ffc107; } .log-error { color: #dc3545; font-weight: bold; } .log-info { color: #17a2b8; }
     </style>
@@ -25,7 +22,6 @@
 <div class="page-container">
     <h1 class="mb-4">Dashboard de Monitoreo: <span class="text-primary">{{ linea.Nombre }}</span></h1>
     <div class="row">
-        <!-- Columna de Monitoreo y Decisiones -->
         <div class="col-lg-7">
             <div class="card">
                 <div class="card-header">Monitoreo y Decisión</div>
@@ -35,12 +31,15 @@
                         <div class="col-4"><h6>Temperatura</h6><p class="fs-4 fw-bold text-warning" id="temp">-- °C</p></div>
                         <div class="col-4"><h6>Presión</h6><p class="fs-4 fw-bold text-primary" id="pres">-- bar</p></div>
                     </div>
+                    <h5 class="text-center mt-4">Datos del Simulador (Sensor)</h5>
+                    <canvas id="realSensorChart"></canvas>
+                    <h5 class="text-center mt-4">Datos Interpretados por Modelo</h5>
                     <canvas id="realtimeChart"></canvas>
                     <hr class="my-4">
                     <div class="text-center" id="decision-area">
                         <h5>Recomendación del Modelo IA</h5>
                         <div id="recommendation-wrapper" class="mb-2">
-                            <span id="recommendation" class="badge bg-secondary recommendation-badge">Conectando...</span>
+                            <span id="recommendation" class="badge bg-secondary recommendation-badge">Esperando datos...</span>
                             <span id="recompensa" class="ms-2 text-muted"></span>
                         </div>
                         <div id="decision-buttons" class="justify-content-center">
@@ -58,8 +57,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Columna de Logs -->
         <div class="col-lg-5">
             <div class="card" style="height: calc(100% - 20px);">
                 <div class="card-header">Log de Eventos</div>
@@ -71,7 +68,6 @@
     </div>
 </div>
 
-<!-- Modal para Intervención Humana -->
 <div class="modal fade" id="overrideModal" tabindex="-1" aria-labelledby="overrideModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -88,21 +84,19 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- Primero, carga las librerías externas de las que depende tu script -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<!-- Después, ejecuta tu propio código -->
 <script>
 document.addEventListener("DOMContentLoaded", function() {
 
+    // --- 1. INICIALIZACIÓN Y DECLARACIÓN DE VARIABLES ---
     const lineaNombre = JSON.parse(document.getElementById('linea-nombre-data').textContent);
     const wsProtocol = window.location.protocol === 'https' ? 'wss' : 'ws';
     const final_socket_url = `${wsProtocol}://${window.location.host}/ws/maquina/${encodeURIComponent(lineaNombre)}/`;
     const socket = new WebSocket(final_socket_url);
-
-    let currentEventId = null;
-
+    
+    const realSensorCtx = document.getElementById('realSensorChart').getContext('2d');
+    const rtCtx = document.getElementById('realtimeChart').getContext('2d');
     const eventLog = document.getElementById('eventLog');
     const decisionButtons = document.getElementById('decision-buttons');
     const acceptBtn = document.getElementById('acceptBtn');
@@ -110,6 +104,28 @@ document.addEventListener("DOMContentLoaded", function() {
     const iaRecommendationModal = document.getElementById('ia-recommendation-modal');
     const simulateBtn = document.getElementById('simulateBtn');
 
+    let simulationChart;
+    let currentEventId = null;
+
+    const chartOptions = {
+        scales: { y: { beginAtZero: false } },
+        plugins: { legend: { display: true, position: 'top' } },
+        animation: { duration: 500 }
+    };
+    
+    const realSensorChart = new Chart(realSensorCtx, {
+        type: 'line',
+        data: { labels: [], datasets: [ { label: 'Uso Sensor (%)', data: [], borderColor: 'rgba(40, 167, 69, 0.8)', tension: 0.3, borderWidth: 2, pointRadius: 1 }, { label: 'Temp Sensor (°C)', data: [], borderColor: 'rgba(255, 193, 7, 0.8)', tension: 0.3, borderWidth: 2, pointRadius: 1 }, { label: 'Presión Sensor (bar)', data: [], borderColor: 'rgba(13, 110, 253, 0.8)', tension: 0.3, borderWidth: 2, pointRadius: 1 } ] },
+        options: chartOptions
+    });
+
+    const realtimeChart = new Chart(rtCtx, { 
+        type: 'line', 
+        data: { labels: [], datasets: [ { label: 'Uso Modelo (%)', data: [], borderColor: 'rgba(25, 135, 84, 1)', tension: 0.3, borderWidth: 2, pointRadius: 1 }, { label: 'Temp. Modelo (°C)', data: [], borderColor: 'rgba(255, 193, 7, 1)', tension: 0.3, borderWidth: 2, pointRadius: 1 }, { label: 'Presión Modelo (bar)', data: [], borderColor: 'rgba(13, 110, 253, 1)', tension: 0.3, borderWidth: 2, pointRadius: 1 } ]}, 
+        options: chartOptions
+    });
+
+    // --- 2. DEFINICIÓN DE FUNCIONES AUXILIARES ---
     function logEvent(message, type = 'info') {
         const now = new Date();
         const timestamp = now.toLocaleTimeString();
@@ -118,133 +134,130 @@ document.addEventListener("DOMContentLoaded", function() {
         eventLog.scrollTop = eventLog.scrollHeight;
     }
 
-    const rtCtx = document.getElementById('realtimeChart').getContext('2d');
-    const realtimeChart = new Chart(rtCtx, { type: 'line', data: { labels: [], datasets: [ { label: 'Uso (%)', data: [], borderColor: 'rgba(25, 135, 84, 1)', tension: 0.3, borderWidth: 2, pointRadius: 0 }, { label: 'Temperatura (°C)', data: [], borderColor: 'rgba(255, 193, 7, 1)', tension: 0.3, borderWidth: 2, pointRadius: 0 }, { label: 'Presión (bar)', data: [], borderColor: 'rgba(13, 110, 253, 1)', tension: 0.3, borderWidth: 2, pointRadius: 0 } ]}, options: { animation: { duration: 500 }, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: true, position: 'top' } } } });
-
-    function updateRealtimeChart(data) {
-        const labels = realtimeChart.data.labels;
+    function updateChart(chart, data) {
+        if (!data || typeof data.uso === 'undefined') {
+            console.error("updateChart fue llamado con datos inválidos:", data);
+            return;
+        }
+        const labels = chart.data.labels;
         labels.push(new Date().toLocaleTimeString());
-        if (labels.length > 20) { labels.shift(); realtimeChart.data.datasets.forEach(dataset => dataset.data.shift()); }
-        realtimeChart.data.datasets[0].data.push(data.uso);
-        realtimeChart.data.datasets[1].data.push(data.temperatura);
-        realtimeChart.data.datasets[2].data.push(data.presion);
-        realtimeChart.update('none');
+        if (labels.length > 20) { 
+            labels.shift(); 
+            chart.data.datasets.forEach(dataset => dataset.data.shift()); 
+        }
+        chart.data.datasets[0].data.push(data.uso);
+        chart.data.datasets[1].data.push(data.temperatura);
+        chart.data.datasets[2].data.push(data.presion);
+        chart.update('none');
     }
-    
-    let simulationChart;
+
+    function lockDecision() { 
+        decisionButtons.style.display = 'none'; 
+    }
+
+    function unlockDecision(recommendation) { 
+        iaRecommendationModal.textContent = recommendation;
+        decisionButtons.style.display = 'flex'; 
+    }
+
     function updateSimulationChart(data) {
         simulateBtn.disabled = false;
         simulateBtn.innerHTML = 'Simular';
         const simCtx = document.getElementById('simulationChart').getContext('2d');
         if (simulationChart) { simulationChart.destroy(); }
-        simulationChart = new Chart(simCtx, { type: 'line', data: { labels: data.map(d => `H+${d.hora}`), datasets: [ { label: 'Temp. Predicha (°C)', data: data.map(d => d.temperatura), borderColor: 'red', yAxisID: 'y' }, { label: 'Presión Predicha (bar)', data: data.map(d => d.presion), borderColor: 'blue', yAxisID: 'y' }, { label: 'Uso Predicho (%)', data: data.map(d => d.uso), borderColor: 'green', yAxisID: 'y1', pointStyle: 'rect' } ]}, options: { scales: { y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Temp / Presión' } }, y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'Uso (%)' }, grid: { drawOnChartArea: false } } } } });
+        simulationChart = new Chart(simCtx, { /* ... */ });
     }
 
-    function lockDecision() {
-        decisionButtons.style.display = 'none';
-    }
+    // --- 3. MANEJO DE EVENTOS DEL WEBSOCKET ---
+    socket.onopen = () => { logEvent('Conexión establecida. Escuchando...', 'info'); };
+    socket.onclose = () => { logEvent('Conexión cerrada.', 'error'); };
+    socket.onerror = (error) => { logEvent('Error en WebSocket.', 'error'); };
 
-    function unlockDecision(recommendation) {
-        iaRecommendationModal.textContent = recommendation;
-        decisionButtons.style.display = 'flex';
-    }
-
-    socket.onopen = () => {
-        logEvent('Conexión WebSocket establecida.', 'info');
-        setInterval(sendRealtimeData, 3000);
-    };
-
-    socket.onclose = () => {
-        logEvent('Conexión WebSocket cerrada.', 'error');
-        document.getElementById('recommendation').textContent = "Desconectado";
-        document.getElementById('recommendation').className = 'badge bg-dark recommendation-badge';
-    };
-
-    socket.onmessage = (e) => {
-        const data = JSON.parse(e.data);
-        logEvent(`IN: ${e.data}`, 'in');
-
-        if (data.type === 'realtime_recommendation') {
-            currentEventId = data.evento_id;
-            document.getElementById('recommendation').textContent = data.recommendation;
-            document.getElementById('recompensa').textContent = `(Recompensa: ${data.recompensa_estimada})`;
-            unlockDecision(data.recommendation);
+    socket.onmessage = (event) => {
+        logEvent(`IN: ${event.data}`, 'in');
+        try {
+            const data = JSON.parse(event.data);
             
-            const badge = document.getElementById('recommendation');
-            if (data.action_id === 2) { badge.className = 'badge bg-danger recommendation-badge'; }
-            else if (data.action_id === 5) { badge.className = 'badge bg-success recommendation-badge'; }
-            else { badge.className = 'badge bg-warning text-dark recommendation-badge'; }
+            // Usamos un switch para manejar diferentes tipos de mensajes
+            switch (data.type) {
+                case 'realtime_recommendation':
+                    currentEventId = data.evento_id; // Guardamos el ID para los botones
+                    
+                    document.getElementById('recommendation').textContent = data.recommendation;
+                    document.getElementById('recompensa').textContent = `(Recompensa: ${data.recompensa_estimada})`;
 
-        } else if (data.type === 'future_simulation_result') {
-            updateSimulationChart(data.simulation_data);
-        } else if (data.type === 'decision_guardada') {
-            logEvent(`Confirmación recibida: ${data.message}`, 'info');
-        } else if (data.type === 'error') {
-            logEvent(`ERROR del servidor: ${data.message}`, 'error');
+                    if (data.datos_sensor) {
+                        updateChart(realSensorChart, data.datos_sensor);
+                    }
+
+                    if (data.datos_modelo) {
+                        document.getElementById('uso').textContent = `${parseFloat(data.datos_modelo.uso).toFixed(1)} %`;
+                        document.getElementById('temp').textContent = `${parseFloat(data.datos_modelo.temperatura).toFixed(1)} °C`;
+                        document.getElementById('pres').textContent = `${parseFloat(data.datos_modelo.presion).toFixed(1)} bar`;
+                        updateChart(realtimeChart, data.datos_modelo);
+                    }
+                    
+                    unlockDecision(data.recommendation);
+                    const badge = document.getElementById('recommendation');
+                    if (data.action_id === 2) { badge.className = 'badge bg-danger recommendation-badge'; }
+                    else if (data.action_id === 5) { badge.className = 'badge bg-success recommendation-badge'; }
+                    else { badge.className = 'badge bg-warning text-dark recommendation-badge'; }
+                    break;
+                
+                case 'future_simulation_result':
+                    updateSimulationChart(data.simulation_data);
+                    break;
+                
+                case 'decision_guardada':
+                    logEvent(`Confirmación recibida: ${data.message}`, 'info');
+                    break;
+
+                case 'error':
+                    logEvent(`ERROR del servidor: ${data.message}`, 'error');
+                    break;
+            }
+        } catch (error) {
+            logEvent('Error procesando mensaje del servidor.', 'error');
+            console.error("Fallo al procesar el mensaje del WebSocket:", error, "Mensaje crudo:", event.data);
         }
     };
 
+    // --- 4. MANEJO DE EVENTOS DE BOTONES ---
     acceptBtn.addEventListener('click', () => {
-        if (currentEventId) {
-            const message = { type: 'decision_confirmada', payload: { evento_id: currentEventId, decision: 'aceptada' }};
-            socket.send(JSON.stringify(message));
-            logEvent(`OUT: ${JSON.stringify(message)}`, 'out');
-            lockDecision();
-        }
+        if (!currentEventId) return;
+        const message = { type: 'decision_confirmada', payload: { evento_id: currentEventId, decision: 'aceptada' }};
+        socket.send(JSON.stringify(message));
+        logEvent(`OUT: ${JSON.stringify(message)}`, 'out');
+        lockDecision();
     });
 
     confirmOverrideBtn.addEventListener('click', () => {
+        if (!currentEventId) return;
         const humanAction = document.getElementById('human-action').value;
         const humanComment = document.getElementById('human-comment').value;
 
         if (!humanComment) {
-            alert('El comentario es obligatorio para anular la recomendación.');
+            alert('El comentario es obligatorio para anular.');
             return;
         }
-
-        if (currentEventId) {
-            const message = { type: 'decision_confirmada', payload: { evento_id: currentEventId, decision: 'anulada', accion_humana: humanAction, comentario: humanComment }};
-            socket.send(JSON.stringify(message));
-            logEvent(`OUT: ${JSON.stringify(message)}`, 'out');
-            lockDecision();
-            
-            const modal = bootstrap.Modal.getInstance(document.getElementById('overrideModal'));
-            modal.hide();
-        }
+        
+        const message = { type: 'decision_confirmada', payload: { evento_id: currentEventId, decision: 'anulada', accion_humana: humanAction, comentario: humanComment }};
+        socket.send(JSON.stringify(message));
+        logEvent(`OUT: ${JSON.stringify(message)}`, 'out');
+        lockDecision();
+        const modal = bootstrap.Modal.getInstance(document.getElementById('overrideModal'));
+        modal.hide();
     });
 
-    function sendRealtimeData() {
-        if (socket.readyState === WebSocket.OPEN) {
-            const fakeData = {
-                uso: Math.random() * 20 + 75,
-                temperatura: 60 + Math.random() * 30,
-                presion: 100 + Math.random() * 50
-            };
-            
-            document.getElementById('uso').textContent = `${fakeData.uso.toFixed(1)} %`;
-            document.getElementById('temp').textContent = `${fakeData.temperatura.toFixed(1)} °C`;
-            
-            document.getElementById('pres').textContent = `${fakeData.presion.toFixed(1)} bar`;
-            
-            updateRealtimeChart(fakeData);
-
-            const message = { type: 'realtime_update', payload: fakeData };
-            socket.send(JSON.stringify(message));
-            logEvent(`OUT: ${JSON.stringify(message)}`, 'out');
-        }
-    }
-
-    simulateBtn.onclick = () => {
+    simulateBtn.addEventListener('click', () => {
         simulateBtn.disabled = true;
         simulateBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Simulando...';
-        
         const horas = document.getElementById('horas').value;
         const message = { type: 'simulate_future', payload: { horas: parseInt(horas) } };
         socket.send(JSON.stringify(message));
         logEvent(`OUT: ${JSON.stringify(message)}`, 'out');
-    };
+    });
 });
 </script>
 {{ linea.Nombre|json_script:"linea-nombre-data" }}
-
 {% endblock %}

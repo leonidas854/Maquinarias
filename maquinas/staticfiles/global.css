@@ -1,0 +1,107 @@
+:root {
+    --coca-cola-red: #E61D2B;
+    --coca-cola-white: #FEFEFE;
+    --coca-cola-black: #1A1A1A;
+    --light-gray: #f4f4f4;
+    --medium-gray: #e0e0e0;
+    --dark-gray: #333;
+    --text-color: #2c3e50;
+    --font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+body {
+    font-family: var(--font-family);
+    margin: 0;
+    background-color: var(--light-gray);
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+header {
+    background-color: var(--coca-cola-red);
+    color: var(--coca-cola-white);
+    padding: 0 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+main {
+    flex-grow: 1;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+footer {
+    background-color: var(--dark-gray);
+    color: var(--coca-cola-white);
+    text-align: center;
+    padding: 15px 0;
+    font-size: 0.9em;
+}
+
+h1, h2, h3 {
+    color: var(--coca-cola-red);
+}
+
+.page-container {
+    background-color: var(--coca-cola-white);
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: var(--dark-gray);
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--medium-gray);
+    border-radius: 5px;
+    box-sizing: border-box;
+    font-size: 1em;
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="number"]:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--coca-cola-red);
+    box-shadow: 0 0 0 0.2rem rgba(230, 29, 43, 0.25);
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.btn-primary {
+    background-color: var(--coca-cola-red);
+    color: var(--coca-cola-white);
+}
+
+.btn-primary:hover {
+    background-color: #c01722; /* Un rojo más oscuro */
+}

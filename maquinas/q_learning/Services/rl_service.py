@@ -25,8 +25,8 @@ class RLModelManager:
         """Método privado para cargar el modelo y la información de las líneas."""
         if cls._model is None:
             print("Cargando modelo PPO en memoria...")
-            # Asegúrate de que la ruta sea correcta desde la raíz del proyecto Django
-            cls._model = PPO.load("modelo_multilinea_local_norm2.zip")
+            #cls._model = PPO.load("modelo_multilinea_local_norm2.zip")
+            cls._model = PPO.load("mejor_modelo/best_model.zip",device='cpu')
             print("Modelo cargado exitosamente.")
 
         if cls._lineas_info is None:
@@ -89,6 +89,5 @@ class RLModelManager:
         """Convierte el ID de la acción (0-5) a un texto legible."""
         return cls._accion_mapa.get(id_accion, "Acción desconocida")
 
-# Opcional pero recomendado: Llama a _initialize() una vez cuando el módulo se importa.
 # Esto hace que el modelo se cargue cuando Django inicia el servidor.
 RLModelManager._initialize()

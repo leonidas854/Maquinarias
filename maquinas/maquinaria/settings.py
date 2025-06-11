@@ -31,6 +31,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    
     'daphne', 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -45,6 +46,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -88,6 +91,7 @@ DATABASES = {
         "PORT": "5432"
     }
 }
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 CHANNEL_LAYERS = {
     "default": {

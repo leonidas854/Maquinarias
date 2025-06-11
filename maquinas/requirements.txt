@@ -9,4 +9,4 @@ tensorboard
 django-channels
 channels-redis
 daphne
- 
+whitenoise

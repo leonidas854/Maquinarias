@@ -1,0 +1,87 @@
+.reports-page {
+    /* Hereda de .page-container */
+}
+
+.reports-layout {
+    display: flex;
+    gap: 20px;
+}
+
+.reports-sidebar {
+    flex: 0 0 250px; /* Ancho fijo para el sidebar */
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 5px;
+    border: 1px solid var(--medium-gray);
+}
+
+.reports-sidebar h3 {
+    margin-top: 0;
+    color: var(--dark-gray);
+    border-bottom: 1px solid var(--medium-gray);
+    padding-bottom: 10px;
+}
+
+.sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-menu li a {
+    display: block;
+    padding: 10px 15px;
+    text-decoration: none;
+    color: var(--text-color);
+    border-radius: 4px;
+    margin-bottom: 5px;
+}
+
+.sidebar-menu li a:hover,
+.sidebar-menu li a.active-report {
+    background-color: var(--coca-cola-red);
+    color: var(--coca-cola-white);
+}
+
+.reports-content {
+    flex-grow: 1;
+}
+
+.reports-content h3 {
+    margin-top: 0;
+}
+
+.data-grid-container {
+    margin-top: 20px;
+    overflow-x: auto; /* Para tablas anchas */
+}
+.data-grid-container .placeholder-text{
+    color: #777;
+    font-style: italic;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+
+.data-table th, .data-table td {
+    border: 1px solid var(--medium-gray);
+    padding: 10px 12px;
+    text-align: left;
+}
+
+.data-table thead th {
+    background-color: var(--dark-gray);
+    color: var(--coca-cola-white);
+    font-weight: bold;
+}
+
+.data-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.data-table tbody tr:hover {
+    background-color: #e9ecef;
+}

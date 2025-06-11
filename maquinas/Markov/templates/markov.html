@@ -1,109 +1,208 @@
 {% extends 'index.html' %}
 {% load static %}
+
 {% block title %}Optimización con Cadenas de Markov{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'markov.css' %}">
+<style>
+  .markov-page {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .markov-page h2 {
+    color: var(--coca-cola-red);
+    margin-bottom: 25px;
+    font-size: 1.8em;
+    text-align: center;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: block;
+    color: #444;
+  }
+
+  .form-group select,
+  .form-group input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--medium-gray);
+    border-radius: 6px;
+    font-size: 1em;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus {
+    outline: none;
+    border-color: var(--coca-cola-red);
+    box-shadow: 0 0 0 3px rgba(230, 29, 43, 0.15);
+  }
+
+  .estado-info {
+    background-color: #fff0f0;
+    padding: 20px;
+    border-left: 6px solid var(--coca-cola-red);
+    border-radius: 6px;
+    margin-top: 25px;
+  }
+
+  .estado-info h4 {
+    margin-bottom: 8px;
+    color: #b30000;
+  }
+
+  #btn-prediccion {
+    display: inline-block;
+    margin-top: 15px;
+    background-color: var(--coca-cola-red);
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background-color 0.3s ease-in-out;
+  }
+
+  #btn-prediccion:hover {
+    background-color: #c01722;
+  }
+
+  .matriz-resultado {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #fdfdfd;
+    border: 1px solid var(--medium-gray);
+    border-radius: 6px;
+    overflow-x: auto;
+  }
+
+  .matriz-resultado table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .matriz-resultado th,
+  .matriz-resultado td {
+    border: 1px solid #ccc;
+    padding: 10px 12px;
+    text-align: center;
+  }
+
+  .matriz-resultado th {
+    background-color: #f7f7f7;
+    font-weight: bold;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="page-container markov-page">
-    <h2>Optimización con Cadenas de Markov</h2>
+  <h2>Optimización con Cadenas de Markov</h2>
 
-    <div class="form-group">
-        <label for="linea-select">Seleccione su máquina:</label>
-        <select id="linea-select">
-    {% for linea in lineas %}
+  <div class="form-group">
+    <label for="linea-select">Seleccione su máquina:</label>
+    <select id="linea-select">
+      {% for linea in lineas %}
         <option value="{{ linea.Nombre }}">{{ linea.Nombre }}</option>
-    {% endfor %}
-</select>
+      {% endfor %}
+    </select>
+  </div>
 
-    </div>
-
-   <div class="estado-info">
+  <div class="estado-info">
     <h4>Estado actual: <span id="estado-actual">-</span></h4>
     <p>Estados posibles: <span id="estados-posibles">-</span></p>
-</div>
+  </div>
 
+  <div class="form-group">
+    <label for="saltos">Días de simulación:</label>
+    <input type="number" id="saltos" min="1" placeholder="Ej: 5">
+  </div>
 
-    <div class="form-group">
-        <label for="saltos">Días de simulación:</label>
-        <input type="number" id="saltos" min="1" placeholder="Ej: 5">
-    </div>
+  <button id="btn-prediccion">Aplicar Cambios</button>
 
-    <button id="btn-prediccion">Aplicar Cambios</button>
-
-    <div id="resultado-markov" class="matriz-resultado">
-        <!-- Se cargará aquí la tabla de resultados -->
-    </div>
+  <div id="resultado-markov" class="matriz-resultado"></div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const selectLinea = document.getElementById('linea-select');
-    const estadoActual = document.getElementById('estado-actual');
-    const estadosPosibles = document.getElementById('estados-posibles');
+  const selectLinea = document.getElementById('linea-select');
+  const estadoActual = document.getElementById('estado-actual');
+  const estadosPosibles = document.getElementById('estados-posibles');
 
-    async function actualizarInfo() {
-        const seleccion = selectLinea.value;
-        if (!seleccion) {
-            estadoActual.textContent = '-';
-            estadosPosibles.textContent = '-';
-            return;
-        }
-
-        const response = await fetch(`/markov/estado-actual/?linea=${encodeURIComponent(seleccion)}`);
-        const data = await response.json();
-
-        estadoActual.textContent = data.estado_actual || 'Sin datos';
-        estadosPosibles.textContent = data.estados_posibles?.join(', ') || '-';
+  async function actualizarInfo() {
+    const seleccion = selectLinea.value;
+    if (!seleccion) {
+      estadoActual.textContent = '-';
+      estadosPosibles.textContent = '-';
+      return;
     }
 
-    selectLinea.addEventListener('change', actualizarInfo);
-    actualizarInfo();
-});
-</script>
-<script>
-document.getElementById('btn-prediccion').addEventListener('click', async () => {
-    const linea = document.getElementById('linea-select').value;
-    const saltos = document.getElementById('saltos').value;
-
-    if (!linea || !saltos) {
-        alert("Seleccione una línea y defina los días de simulación.");
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append('linea', linea);
-    formData.append('saltos', saltos);
-
-    const response = await fetch("{% url 'predecir_markov' %}", {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': '{{ csrf_token }}'
-        },
-        body: formData
-    });
-
+    const response = await fetch(`/markov/estado-actual/?linea=${encodeURIComponent(seleccion)}`);
     const data = await response.json();
 
-    if (data.error) {
-        document.getElementById('resultado-markov').innerHTML = `<p style="color:red;">${data.error}</p>`;
-        return;
-    }
+    estadoActual.textContent = data.estado_actual || 'Sin datos';
+    estadosPosibles.textContent = data.estados_posibles?.join(', ') || '-';
+  }
 
-    let html = `<h4>Estado Actual: ${data.Estado_actual}</h4>`;
-    html += `<table border="1" cellpadding="8"><tr><th>Estado</th><th>Probabilidad (%)</th></tr>`;
-    data.detalles.forEach(e => {
-        html += `<tr><td>${e.estado}</td><td>${(e.probabilidad * 100).toFixed(2)}</td></tr>`;
-    });
-    html += `</table>`;
+  selectLinea.addEventListener('change', actualizarInfo);
+  actualizarInfo();
+});
 
-    document.getElementById('resultado-markov').innerHTML = html;
+document.getElementById('btn-prediccion').addEventListener('click', async () => {
+  const linea = document.getElementById('linea-select').value;
+  const saltos = document.getElementById('saltos').value;
+
+  if (!linea || !saltos) {
+    alert("Seleccione una línea y defina los días de simulación.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('linea', linea);
+  formData.append('saltos', saltos);
+
+  const response = await fetch("{% url 'predecir_markov' %}", {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}'
+    },
+    body: formData
+  });
+
+  const data = await response.json();
+  const resultadoDiv = document.getElementById('resultado-markov');
+
+  if (data.error) {
+    resultadoDiv.innerHTML = `<p style="color:red;">${data.error}</p>`;
+    return;
+  }
+
+  let html = `<h4>Estado Actual: ${data.Estado_actual}</h4>`;
+  html += `<table><thead><tr><th>Estado</th><th>Probabilidad (%)</th></tr></thead><tbody>`;
+  data.detalles.forEach(e => {
+    html += `<tr><td>${e.estado}</td><td>${(e.probabilidad * 100).toFixed(2)}%</td></tr>`;
+  });
+  html += `</tbody></table>`;
+
+  resultadoDiv.innerHTML = html;
 });
 </script>
-
-
 {% endblock %}

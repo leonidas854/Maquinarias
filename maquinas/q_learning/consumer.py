@@ -11,6 +11,7 @@ from Reportes.models import Lineas_Embotelladoras
 from q_learning.models import Simulacion_estado
 from q_learning.Services.ServicesQ_learning_ import ServicesQ_learning
 from channels.generic.websocket import AsyncWebsocketConsumer
+from Markov.Services.ServicesMarkov_ import ServicesMarkov
 
 class MaquinaConsumer(AsyncWebsocketConsumer):
 
@@ -46,64 +47,69 @@ class MaquinaConsumer(AsyncWebsocketConsumer):
         except Exception as e:
             await self.send_error(f"Error inesperado en receive: {str(e)}")
 
+
+
     async def handle_realtime_prediction(self, payload):
-      
+        
         try:
-             
             @sync_to_async
             def get_prediction_data(linea_nombre, payload_data):
-                # 1. Inicializar el simulador (operación síncrona con acceso a BD)
-                sim_temp = ServicesQ_learning(linea_nombre)
                 
-                # 2. Obtener estado actual (asumimos fallback por ahora)
-                nombre_estado_actual = 'Operativa'
+                sim_temp = ServicesQ_learning(linea_nombre)
+                estado_actual = ServicesMarkov(linea_nombre).get_ultimo_estado()
+                nombre_estado_actual = estado_actual.get('estado')
                 id_estado_actual = sim_temp.estado_invertido.get(nombre_estado_actual)
-
-                if id_estado_actual is None:
-                    raise ValueError(f"El estado por defecto '{nombre_estado_actual}' no es válido.")
-
-                # 3. Preparar datos y normalizar la observación
-                datos_reales = {
-                    "uso": float(payload_data['uso']),
-                    "temperatura": float(payload_data['temperatura']),
-                    "presion": float(payload_data['presion'])
-                }
-                obs = RLModelManager.normalizar_observacion(datos_reales, linea_nombre, id_estado_actual)
-
-               
+                datos_reales_originales = {"uso": float(payload_data['uso']),"temperatura": float(payload_data['temperatura']),"presion": float(payload_data['presion'])}
+                obs = RLModelManager.normalizar_observacion(datos_reales_originales, linea_nombre, id_estado_actual)
                 model = RLModelManager.get_model()
                 action, _ = model.predict(obs, deterministic=True)
-                
-                # 5. Traducir la acción y calcular la recompensa
                 recomendacion = RLModelManager.traducir_accion(int(action))
-                
-                estado_actual_dict = {'nombre': nombre_estado_actual, **datos_reales}
+                estado_actual_dict = {'nombre': nombre_estado_actual, **datos_reales_originales}
                 recompensa = self._calcular_recompensa_estimada(int(action), estado_actual_dict, sim_temp.linea_config)
                 
                 return {
                     "recomendacion": recomendacion,
                     "action_id": int(action),
-                    "recompensa": recompensa
+                    "recompensa": recompensa,
+                    "datos_sensor": datos_reales_originales,
+                    "datos_modelo": datos_reales_originales
                 }
 
             prediction_result = await get_prediction_data(self.linea_nombre, payload)
             
-            await self.send_json({
+            
+            response_data = {
                 'type': 'realtime_recommendation',
                 'recommendation': prediction_result["recomendacion"],
                 'action_id': prediction_result["action_id"],
-                'recompensa_estimada': round(prediction_result["recompensa"], 2)
-            })
-
+                'recompensa_estimada': round(prediction_result["recompensa"], 2),
+                'datos_sensor': prediction_result['datos_sensor'],
+                'datos_modelo': prediction_result['datos_modelo'],
+                
+            }
+            
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'broadcast_message', # Un nombre de handler diferente
+                    'message': response_data
+                }
+            )
         except Exception as e:
             await self.send_error(f"Error en predicción en tiempo real: {str(e)}")
 
+   
+    async def broadcast_message(self, event):
+        message = event['message']
+        await self.send(text_data=json.dumps(message))
+
+
+ 
+
     @sync_to_async
     def crear_evento_preliminar(self, acc_ia, datos, recompensa):
-        """Crea el registro en la BD de forma síncrona dentro de un wrapper asíncrono."""
         linea = Lineas_Embotelladoras.objects.get(Nombre=self.linea_nombre)
         
-        # Manejo del usuario. Si no está autenticado, no se asigna.
         usuario = self.user if self.user and self.user.is_authenticated else None
 
         evento = Simulacion_estado.objects.create(
@@ -115,8 +121,7 @@ class MaquinaConsumer(AsyncWebsocketConsumer):
             Presion=datos['presion'],
             Uso=datos['uso'],
             Recompensa=recompensa,
-            # Los campos de decisión humana se dejan nulos por ahora
-            Invervencion=False # La intervención es falsa hasta que el humano diga lo contrario
+            Invervencion=False 
         )
         return evento.id
 
@@ -162,25 +167,20 @@ class MaquinaConsumer(AsyncWebsocketConsumer):
             raise ValueError(f"No se encontró el evento con ID {evento_id}.")
 
     def _calcular_recompensa_estimada(self, action: int, estado_actual: dict, config: dict) -> float:
-        """Espejo de la función _get_reward del entorno."""
-        # Esta es la misma lógica de recompensa que definimos antes
         reward = 0.0
         temp, pres, estado_nombre = estado_actual['temperatura'], estado_actual['presion'], estado_actual['nombre']
         temp_max, pres_max = config["Temp_max"], config["Presion_maxima"]
         
-        # Penalización por operar en rangos peligrosos
         if temp > temp_max * 0.9: reward -= 1.5 
         if pres > pres_max * 0.9: reward -= 1.5
 
-        # Recompensa/penalización por estado
         if estado_nombre == 'Operativa': reward += 1.0 
         elif estado_nombre in ['Mantenimiento', 'Parada']: reward -= 2.0 
        
-        # Asumiendo que la acción 2 es la de mantenimiento
+
         if action == 2 and estado_nombre == 'Operativa' and temp < temp_max * 0.9: reward -= 10
         if action == 2 and (temp > temp_max * 0.9 or pres > pres_max * 0.9): reward += 15 
 
-        # Penalización severa por exceder límites
         if temp > temp_max: reward -= 20
         if pres > pres_max: reward -= 20
 

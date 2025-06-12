@@ -12,4 +12,7 @@ urlpatterns = [
     
     path('api/configuracion/', views.get_linea_config, name='api_get_linea_config'),
     
+    path('api/todas-las-lineas/', views.get_todas_las_lineas, name='api_get_todas_las_lineas'),
+    
+   
 ]

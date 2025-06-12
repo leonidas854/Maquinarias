@@ -52,7 +52,6 @@ class Entrenamiento():
         print("Ejemplo de shape de la observación:", self.multi_env.observation_space.sample().shape)
         print("Espacio de acción del entorno:", self.multi_env.action_space)
 
-        # Configuración del modelo PPO
         model = PPO(
             "MlpPolicy",
             self.multi_env,

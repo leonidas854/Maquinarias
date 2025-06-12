@@ -9,11 +9,11 @@
         body { background-color: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
         .page-container { padding: 1.5rem; }
         .card { margin-top: 20px; border: none; border-radius: 0.75rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .card-header { background-color: #fff; border-bottom: 1px solid #e9ecef; font-weight: 600; display: flex; align-items: center; gap: 10px; }
-        .recommendation-badge { font-size: 1.1rem; padding: 0.5em 1em; text-transform: uppercase; letter-spacing: 1px; }
+        .card-header { background-color: #fff; border-bottom: 1px solid #e9ecef; font-weight: 600; }
+        .recommendation-badge { font-size: 1rem; padding: 0.5em 1em; text-transform: uppercase; letter-spacing: 1px; }
         .decision-buttons { display: none; margin-top: 15px; gap: 10px; }
-        #realtimeChart, #realSensorChart, #simulationChart { max-height: 250px; }
-        #eventLog { height: 250px; overflow-y: scroll; background-color: #212529; color: #adb5bd; font-family: monospace; font-size: 0.8rem; padding: 10px; border-radius: 5px; white-space: pre-wrap; }
+        #realSensorChart, #simulationChart { max-height: 280px; }
+        #eventLog { height: 300px; overflow-y: scroll; background-color: #212529; color: #adb5bd; font-family: monospace; font-size: 0.8rem; padding: 10px; border-radius: 5px; white-space: pre-wrap; }
         .log-in { color: #28a745; } .log-out { color: #ffc107; } .log-error { color: #dc3545; font-weight: bold; } .log-info { color: #17a2b8; }
     </style>
 {% endblock %}
@@ -22,19 +22,19 @@
 <div class="page-container">
     <h1 class="mb-4">Dashboard de Monitoreo: <span class="text-primary">{{ linea.Nombre }}</span></h1>
     <div class="row">
+        <!-- Columna Principal de Monitoreo -->
         <div class="col-lg-7">
-            <div class="card">
+            <!-- Card de Monitoreo en Tiempo Real -->
+            <div class="card mb-4">
                 <div class="card-header">Monitoreo y Decisión</div>
                 <div class="card-body">
                     <div class="row text-center mb-3">
-                        <div class="col-4"><h6>Uso</h6><p class="fs-4 fw-bold text-success" id="uso">-- %</p></div>
-                        <div class="col-4"><h6>Temperatura</h6><p class="fs-4 fw-bold text-warning" id="temp">-- °C</p></div>
-                        <div class="col-4"><h6>Presión</h6><p class="fs-4 fw-bold text-primary" id="pres">-- bar</p></div>
+                        <div class="col-3"><h6>Uso</h6><p class="fs-4 fw-bold text-success" id="uso">-- %</p></div>
+                        <div class="col-3"><h6>Temperatura</h6><p class="fs-4 fw-bold text-warning" id="temp">-- °C</p></div>
+                        <div class="col-3"><h6>Presión</h6><p class="fs-4 fw-bold text-primary" id="pres">-- bar</p></div>
+                        <div class="col-3"><h6>Estado Real</h6><p class="fs-4 fw-bold text-info" id="estado-real">--</p></div>
                     </div>
-                    <h5 class="text-center mt-4">Datos del Simulador (Sensor)</h5>
                     <canvas id="realSensorChart"></canvas>
-                    <h5 class="text-center mt-4">Datos Interpretados por Modelo</h5>
-                    <canvas id="realtimeChart"></canvas>
                     <hr class="my-4">
                     <div class="text-center" id="decision-area">
                         <h5>Recomendación del Modelo IA</h5>
@@ -43,22 +43,34 @@
                             <span id="recompensa" class="ms-2 text-muted"></span>
                         </div>
                         <div id="decision-buttons" class="justify-content-center">
-                            <button class="btn btn-success" id="acceptBtn">Aceptar Recomendación</button>
-                            <button class="btn btn-danger" id="overrideBtn" data-bs-toggle="modal" data-bs-target="#overrideModal">Anular / Intervenir</button>
+                            <button class="btn btn-success" id="acceptBtn">Aceptar</button>
+
+
+                           <!--<button class="btn btn-danger" id="overrideBtn" data-bs-toggle="modal" data-bs-target="#overrideModal">Anular</button>--> 
+
+
+
                         </div>
                     </div>
                 </div>
             </div>
+            <!-- Card de Simulación Proactiva -->
             <div class="card">
                 <div class="card-header">Simulación Proactiva</div>
                 <div class="card-body">
-                    <div class="input-group mb-3"><span class="input-group-text">Simular Próximas</span><input type="number" class="form-control" id="horas" value="24" min="1"><span class="input-group-text">Horas</span><button class="btn btn-primary" id="simulateBtn" type="button">Simular</button></div>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Simular Próximas</span>
+                        <input type="number" class="form-control" id="horas" value="24" min="1" max="168">
+                        <span class="input-group-text">Horas</span>
+                        <button class="btn btn-primary" id="simulateBtn" type="button">Simular</button>
+                    </div>
                     <canvas id="simulationChart"></canvas>
                 </div>
             </div>
         </div>
+        <!-- Columna de Log de Eventos -->
         <div class="col-lg-5">
-            <div class="card" style="height: calc(100% - 20px);">
+            <div class="card" style="height: calc(100% - 1.5rem);">
                 <div class="card-header">Log de Eventos</div>
                 <div class="card-body" style="display: flex; flex-direction: column;">
                     <div id="eventLog" style="flex-grow: 1;"></div>
@@ -68,6 +80,7 @@
     </div>
 </div>
 
+<!-- Modal para Anular Decisión -->
 <div class="modal fade" id="overrideModal" tabindex="-1" aria-labelledby="overrideModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -89,116 +102,130 @@
 <script>
 document.addEventListener("DOMContentLoaded", function() {
 
-    // --- 1. INICIALIZACIÓN Y DECLARACIÓN DE VARIABLES ---
+    // --- 1. INICIALIZACIÓN Y VARIABLES ---
     const lineaNombre = JSON.parse(document.getElementById('linea-nombre-data').textContent);
     const wsProtocol = window.location.protocol === 'https' ? 'wss' : 'ws';
-    const final_socket_url = `${wsProtocol}://${window.location.host}/ws/maquina/${encodeURIComponent(lineaNombre)}/`;
+    const final_socket_url = `${wsProtocol}://${window.location.host}/ws/maquinas/${encodeURIComponent(lineaNombre)}/`;
     const socket = new WebSocket(final_socket_url);
+
+    let ultimaRecomendacionRecibida = null;
     
-    const realSensorCtx = document.getElementById('realSensorChart').getContext('2d');
-    const rtCtx = document.getElementById('realtimeChart').getContext('2d');
-    const eventLog = document.getElementById('eventLog');
+    // --- Referencias a elementos del DOM ---
+    const usoEl = document.getElementById('uso');
+    const tempEl = document.getElementById('temp');
+    const presEl = document.getElementById('pres');
+    const estadoRealEl = document.getElementById('estado-real');
+    const recommendationEl = document.getElementById('recommendation');
+    const recompensaEl = document.getElementById('recompensa');
     const decisionButtons = document.getElementById('decision-buttons');
     const acceptBtn = document.getElementById('acceptBtn');
     const confirmOverrideBtn = document.getElementById('confirmOverrideBtn');
     const iaRecommendationModal = document.getElementById('ia-recommendation-modal');
     const simulateBtn = document.getElementById('simulateBtn');
+    const eventLog = document.getElementById('eventLog');
+    const realSensorCtx = document.getElementById('realSensorChart').getContext('2d');
+    const simulationCtx = document.getElementById('simulationChart').getContext('2d');
 
+    // --- Instancias de las Gráficas ---
+    let realSensorChart;
     let simulationChart;
-    let currentEventId = null;
 
-    const chartOptions = {
-        scales: { y: { beginAtZero: false } },
-        plugins: { legend: { display: true, position: 'top' } },
-        animation: { duration: 500 }
-    };
-    
-    const realSensorChart = new Chart(realSensorCtx, {
-        type: 'line',
-        data: { labels: [], datasets: [ { label: 'Uso Sensor (%)', data: [], borderColor: 'rgba(40, 167, 69, 0.8)', tension: 0.3, borderWidth: 2, pointRadius: 1 }, { label: 'Temp Sensor (°C)', data: [], borderColor: 'rgba(255, 193, 7, 0.8)', tension: 0.3, borderWidth: 2, pointRadius: 1 }, { label: 'Presión Sensor (bar)', data: [], borderColor: 'rgba(13, 110, 253, 0.8)', tension: 0.3, borderWidth: 2, pointRadius: 1 } ] },
-        options: chartOptions
-    });
+    // --- 2. FUNCIONES AUXILIARES ---
+    function createRealSensorChart() {
+        if (realSensorChart) realSensorChart.destroy();
+        realSensorChart = new Chart(realSensorCtx, {
+            type: 'line',
+            data: { labels: [], datasets: [
+                { label: 'Uso Sensor (%)', data: [], borderColor: 'rgba(40, 167, 69, 0.8)', tension: 0.3 },
+                { label: 'Temp Sensor (°C)', data: [], borderColor: 'rgba(255, 193, 7, 0.8)', tension: 0.3 },
+                { label: 'Presión Sensor (bar)', data: [], borderColor: 'rgba(13, 110, 253, 0.8)', tension: 0.3 }
+            ]},
+            options: { scales: { y: { beginAtZero: false } }, plugins: { legend: { display: true } } }
+        });
+    }
 
-    const realtimeChart = new Chart(rtCtx, { 
-        type: 'line', 
-        data: { labels: [], datasets: [ { label: 'Uso Modelo (%)', data: [], borderColor: 'rgba(25, 135, 84, 1)', tension: 0.3, borderWidth: 2, pointRadius: 1 }, { label: 'Temp. Modelo (°C)', data: [], borderColor: 'rgba(255, 193, 7, 1)', tension: 0.3, borderWidth: 2, pointRadius: 1 }, { label: 'Presión Modelo (bar)', data: [], borderColor: 'rgba(13, 110, 253, 1)', tension: 0.3, borderWidth: 2, pointRadius: 1 } ]}, 
-        options: chartOptions
-    });
-
-    // --- 2. DEFINICIÓN DE FUNCIONES AUXILIARES ---
     function logEvent(message, type = 'info') {
-        const now = new Date();
-        const timestamp = now.toLocaleTimeString();
-        const logClass = `log-${type}`;
-        eventLog.innerHTML += `<div class="${logClass}">[${timestamp}] ${message}</div>`;
+        const timestamp = new Date().toLocaleTimeString();
+        eventLog.innerHTML += `<div class="log-${type}">[${timestamp}] ${message}</div>`;
         eventLog.scrollTop = eventLog.scrollHeight;
     }
 
-    function updateChart(chart, data) {
-        if (!data || typeof data.uso === 'undefined') {
-            console.error("updateChart fue llamado con datos inválidos:", data);
-            return;
-        }
-        const labels = chart.data.labels;
+    function updateRealtimeChart(data) {
+        if (!realSensorChart || !data || typeof data.uso === 'undefined') return;
+        const labels = realSensorChart.data.labels;
         labels.push(new Date().toLocaleTimeString());
         if (labels.length > 20) { 
             labels.shift(); 
-            chart.data.datasets.forEach(dataset => dataset.data.shift()); 
+            realSensorChart.data.datasets.forEach(dataset => dataset.data.shift()); 
         }
-        chart.data.datasets[0].data.push(data.uso);
-        chart.data.datasets[1].data.push(data.temperatura);
-        chart.data.datasets[2].data.push(data.presion);
-        chart.update('none');
+        realSensorChart.data.datasets[0].data.push(data.uso);
+        realSensorChart.data.datasets[1].data.push(data.temperatura);
+        realSensorChart.data.datasets[2].data.push(data.presion);
+        realSensorChart.update('none');
     }
 
-    function lockDecision() { 
-        decisionButtons.style.display = 'none'; 
-    }
-
+    function lockDecision() { decisionButtons.style.display = 'none'; }
+    
     function unlockDecision(recommendation) { 
         iaRecommendationModal.textContent = recommendation;
         decisionButtons.style.display = 'flex'; 
     }
 
-    function updateSimulationChart(data) {
+    function updateSimulationChart(simData) {
         simulateBtn.disabled = false;
         simulateBtn.innerHTML = 'Simular';
-        const simCtx = document.getElementById('simulationChart').getContext('2d');
-        if (simulationChart) { simulationChart.destroy(); }
-        simulationChart = new Chart(simCtx, { /* ... */ });
+        if (simulationChart) simulationChart.destroy();
+        
+        simulationChart = new Chart(simulationCtx, {
+            type: 'line',
+            data: {
+                labels: simData.horas,
+                datasets: [
+                    { label: 'Uso Sim. (%)', data: simData.uso, borderColor: '#198754', yAxisID: 'yUso' },
+                    { label: 'Temp. Sim. (°C)', data: simData.temperatura, borderColor: '#ffc107', yAxisID: 'yTemp' },
+                    { label: 'Presión Sim. (bar)', data: simData.presion, borderColor: '#0d6efd', yAxisID: 'yPresion' },
+                ]
+            },
+            options: {
+                plugins: { title: { display: true, text: `Simulación Inteligente para las próximas ${simData.horas.length} horas` } },
+                scales: {
+                    x: { title: { display: true, text: 'Horas desde ahora' } },
+                    yUso: { type: 'linear', position: 'left', title: { display: true, text: 'Uso (%)' } },
+                    yTemp: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Temp (°C)' } },
+                    yPresion: { display: false }
+                }
+            }
+        });
     }
 
     // --- 3. MANEJO DE EVENTOS DEL WEBSOCKET ---
-    socket.onopen = () => { logEvent('Conexión establecida. Escuchando...', 'info'); };
-    socket.onclose = () => { logEvent('Conexión cerrada.', 'error'); };
-    socket.onerror = (error) => { logEvent('Error en WebSocket.', 'error'); };
+    socket.onopen = () => {
+        logEvent('Conexión de dashboard establecida.');
+    };
+    socket.onclose = () => { logEvent('Conexión de dashboard cerrada.', 'error'); };
+    socket.onerror = (error) => { logEvent('Error en WebSocket del dashboard.', 'error'); };
 
     socket.onmessage = (event) => {
-        logEvent(`IN: ${event.data}`, 'in');
         try {
             const data = JSON.parse(event.data);
+            logEvent(`IN: ${JSON.stringify(data)}`);
             
-            // Usamos un switch para manejar diferentes tipos de mensajes
             switch (data.type) {
                 case 'realtime_recommendation':
-                    currentEventId = data.evento_id; // Guardamos el ID para los botones
+                    ultimaRecomendacionRecibida = data;
                     
-                    document.getElementById('recommendation').textContent = data.recommendation;
-                    document.getElementById('recompensa').textContent = `(Recompensa: ${data.recompensa_estimada})`;
+                    usoEl.textContent = `${parseFloat(data.datos_sensor.uso).toFixed(1)} %`;
+                    tempEl.textContent = `${parseFloat(data.datos_sensor.temperatura).toFixed(1)} °C`;
+                    presEl.textContent = `${parseFloat(data.datos_sensor.presion).toFixed(1)} bar`;
+                    estadoRealEl.textContent = data.estado_real_maquina;
 
-                    if (data.datos_sensor) {
-                        updateChart(realSensorChart, data.datos_sensor);
-                    }
-
-                    if (data.datos_modelo) {
-                        document.getElementById('uso').textContent = `${parseFloat(data.datos_modelo.uso).toFixed(1)} %`;
-                        document.getElementById('temp').textContent = `${parseFloat(data.datos_modelo.temperatura).toFixed(1)} °C`;
-                        document.getElementById('pres').textContent = `${parseFloat(data.datos_modelo.presion).toFixed(1)} bar`;
-                        updateChart(realtimeChart, data.datos_modelo);
-                    }
+                    updateRealtimeChart(data.datos_sensor);
                     
+                    recommendationEl.textContent = data.recommendation;
+                    recompensaEl.textContent = `(Recompensa: ${data.recompensa_estimada})`;
                     unlockDecision(data.recommendation);
-                    const badge = document.getElementById('recommendation');
+                    
+                    const badge = recommendationEl;
                     if (data.action_id === 2) { badge.className = 'badge bg-danger recommendation-badge'; }
                     else if (data.action_id === 5) { badge.className = 'badge bg-success recommendation-badge'; }
                     else { badge.className = 'badge bg-warning text-dark recommendation-badge'; }
@@ -207,7 +234,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 case 'future_simulation_result':
                     updateSimulationChart(data.simulation_data);
                     break;
-                
+
                 case 'decision_guardada':
                     logEvent(`Confirmación recibida: ${data.message}`, 'info');
                     break;
@@ -217,46 +244,59 @@ document.addEventListener("DOMContentLoaded", function() {
                     break;
             }
         } catch (error) {
-            logEvent('Error procesando mensaje del servidor.', 'error');
+            logEvent(`Error al procesar mensaje: ${error}`, 'error');
             console.error("Fallo al procesar el mensaje del WebSocket:", error, "Mensaje crudo:", event.data);
         }
     };
 
     // --- 4. MANEJO DE EVENTOS DE BOTONES ---
     acceptBtn.addEventListener('click', () => {
-        if (!currentEventId) return;
-        const message = { type: 'decision_confirmada', payload: { evento_id: currentEventId, decision: 'aceptada' }};
+        if (!ultimaRecomendacionRecibida) return;
+        const message = { type: 'decision_confirmada', payload: {
+            decision: 'aceptada',
+            recomendacion_ia: ultimaRecomendacionRecibida.recommendation,
+            datos_sensor: ultimaRecomendacionRecibida.datos_sensor,
+            recompensa_estimada: ultimaRecomendacionRecibida.recompensa_estimada,
+        }};
         socket.send(JSON.stringify(message));
-        logEvent(`OUT: ${JSON.stringify(message)}`, 'out');
+        logEvent(`OUT (Aceptar): ${JSON.stringify(message)}`);
         lockDecision();
+        ultimaRecomendacionRecibida = null;
     });
 
     confirmOverrideBtn.addEventListener('click', () => {
-        if (!currentEventId) return;
+        if (!ultimaRecomendacionRecibida) return;
         const humanAction = document.getElementById('human-action').value;
         const humanComment = document.getElementById('human-comment').value;
-
-        if (!humanComment) {
-            alert('El comentario es obligatorio para anular.');
-            return;
-        }
+        if (!humanComment) { alert('El comentario es obligatorio.'); return; }
         
-        const message = { type: 'decision_confirmada', payload: { evento_id: currentEventId, decision: 'anulada', accion_humana: humanAction, comentario: humanComment }};
+        const message = { type: 'decision_confirmada', payload: {
+            decision: 'anulada',
+            recomendacion_ia: ultimaRecomendacionRecibida.recommendation,
+            datos_sensor: ultimaRecomendacionRecibida.datos_sensor,
+            recompensa_estimada: ultimaRecomendacionRecibida.recompensa_estimada,
+            accion_humana: humanAction,
+            comentario: humanComment
+        }};
         socket.send(JSON.stringify(message));
-        logEvent(`OUT: ${JSON.stringify(message)}`, 'out');
+        logEvent(`OUT (Anular): ${JSON.stringify(message)}`);
         lockDecision();
+        ultimaRecomendacionRecibida = null;
         const modal = bootstrap.Modal.getInstance(document.getElementById('overrideModal'));
-        modal.hide();
+        if (modal) { modal.hide(); }
     });
 
     simulateBtn.addEventListener('click', () => {
         simulateBtn.disabled = true;
-        simulateBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Simulando...';
+        simulateBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Simulando...';
         const horas = document.getElementById('horas').value;
-        const message = { type: 'simulate_future', payload: { horas: parseInt(horas) } };
+        const message = { type: 'simulate_future', payload: { horas: parseInt(horas) || 24 } };
         socket.send(JSON.stringify(message));
-        logEvent(`OUT: ${JSON.stringify(message)}`, 'out');
+        logEvent(`OUT (Simulación): ${JSON.stringify(message)}`);
     });
+
+    // --- 5. INICIALIZACIÓN FINAL ---
+    createRealSensorChart();
 });
 </script>
 {{ linea.Nombre|json_script:"linea-nombre-data" }}

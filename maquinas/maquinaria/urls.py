@@ -24,7 +24,7 @@ from Markov import views as m_vi
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('',include('Login.urls')),
-    path('reportes/',re_vi.reportes, name='reportes'),
+    path('reportes/',include('Reportes.urls')),
     path('qlearning/',include('q_learning.urls')),
     path('markov/',include('Markov.urls')),
     

@@ -16,8 +16,7 @@ class ServicesMarkov:
         try:
             linea = Lineas_Embotelladoras.objects.get(Nombre=self.linea)
             ultima = Simulacion_estado.objects.filter(
-                Linea_id=linea,
-                Invervencion=True
+                Linea_id=linea
             ).order_by('-Fecha').first()
             if ultima:
                 return {

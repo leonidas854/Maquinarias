@@ -4,5 +4,5 @@ from . import consumer
 
 websocket_urlpatterns = [
 
-    re_path(r'ws/maquina/(?P<nombre_linea>[^/]+)/$', consumer.MaquinaConsumer.as_asgi()),
+    re_path(r'ws/maquinas/(?P<nombre_linea>[^/]+)/$', consumer.MaquinaConsumer.as_asgi()),
 ]

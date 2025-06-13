@@ -14,7 +14,8 @@ class Markov:
         if not np.isclose(sum(self.vector), 1):
             return False
         for i in range(len(self.matrix)):
-            if not np.isclose(sum(self.matrix[i]), 1):
+            suma_fila = sum(self.matrix[i])
+            if not np.isclose(suma_fila, 1) and not np.isclose(suma_fila, 0):
                 return False 
         return True
     def set_matriz(self, matrix):

@@ -1,23 +1,336 @@
+{% extends 'index.html' %}
+{% load static %}
 
+{% block title %}Ajuste y Monitoreo Manual{% endblock %}
 
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    .page-container { padding: 2rem; max-width: 1200px; margin: 2rem auto; }
+    .card { border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.07); }
+    .card-header { font-weight: 600; }
+    .realtime-stats p { margin-bottom: 0; font-size: 1.5rem; }
+    .realtime-stats h6 { font-size: 0.9rem; color: #6c757d; text-transform: uppercase; }
+    #eventLog { height: 400px; overflow-y: scroll; background-color: #212529; color: #adb5bd; font-family: monospace; font-size: 0.8rem; padding: 10px; border-radius: 5px; }
+</style>
+{% endblock %}
 
-<div class="page-container manual-page">
-    <h2>Ajuste Manual de Parámetros</h2>
-    <div class="form-group">
-        <label for="manual-maquina">Escoger Máquina:</label>
-        <select id="manual-maquina" name="manual-maquina">
-            <option value="">Seleccione una máquina...</option>
-            <option value="linea_ensamblaje_z">Línea de Ensamblaje Z</option>
-            <option value="paletizadora_p1">Paletizadora P1</option>
-            <!-- Más opciones de máquinas -->
-        </select>
-    </div>
-    <div class="form-group">
-        <label for="manual-parametro">Valor del Parámetro (Días/Unidad):</label>
-        <input type="text" id="manual-parametro" name="manual-parametro" placeholder="Ej: 15">
-    </div>
-    <button id="manual-aplicar" class="btn btn-primary">Aplicar Cambios</button>
-    <div id="manual-confirmation" class="results-area">
-        <!-- Confirmación de cambios manuales -->
+{% block content %}
+<div class="page-container">
+    <h2 class="text-center mb-4">Ajuste y Monitoreo Manual de Máquinas</h2>
+    <div class="row g-4">
+        <!-- Columna para el formulario de ajuste manual -->
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header bg-primary text-white">Registrar Intervención Manual</div>
+                <div class="card-body p-4">
+                    {% csrf_token %}
+                    <div class="form-group mb-3">
+                        <label for="manual-linea-select" class="form-label">1. Máquina Afectada:</label>
+                        <select id="manual-linea-select" class="form-select">
+                            <!-- Opciones se llenan con Django -->
+                            {% for linea in lineas %}
+                                <option value="{{ linea.Nombre }}">{{ linea.Nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="manual-accion-select" class="form-label">2. Nuevo Estado Registrado:</label>
+                        <div class="input-group">
+                            <select id="manual-accion-select" class="form-select">
+                                <!-- Opciones base -->
+                                <option value="Mantenimiento">Mantenimiento</option>
+                                <option value="Parada">Parada</option>
+                                <option value="Operativa">Operativa</option>
+                                <option value="Recuperación">Recuperación</option>
+                                <option value="Reserva">Reserva</option>
+                            </select>
+                            <!-- Botón para abrir el modal -->
+                            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#addEstadoModal" title="Añadir nuevo tipo de estado">+</button>
+                        </div>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="manual-fecha" class="form-label">3. Fecha del Ajuste:</label>
+                        <input type="date" id="manual-fecha" class="form-control">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="manual-comentario" class="form-label">4. Comentario (Motivo):</label>
+                        <textarea id="manual-comentario" class="form-control" rows="3" placeholder="Ej: Parada por limpieza de fin de turno."></textarea>
+                    </div>
+                    <button id="manual-aplicar-btn" class="btn btn-primary w-100">Registrar Ajuste</button>
+                    <div id="manual-confirmation" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+        <!-- Columna para el monitoreo -->
+        <div class="col-lg-7">
+             <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">Monitoreo en Tiempo Real</div>
+                <div class="card-body p-4">
+                    <h4 id="monitored-line-name" class="text-center text-muted mb-4">Seleccione una máquina para ver sus datos</h4>
+                    <div id="realtime-data-container" style="display: none;">
+                        <div class="row text-center mb-4 realtime-stats">
+                            <div class="col-3"><h6>Uso</h6><p class="text-success" id="rt-uso">-- %</p></div>
+                            <div class="col-3"><h6>Temperatura</h6><p class="text-warning" id="rt-temp">-- °C</p></div>
+                            <div class="col-3"><h6>Presión</h6><p class="text-primary" id="rt-pres">-- bar</p></div>
+                            <div class="col-3"><h6>Estado Servidor</h6><p class="text-info" id="rt-estado">--</p></div>
+                        </div>
+                        <canvas id="realtime-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+             <div class="card">
+                <div class="card-header">Log de Eventos</div>
+                <div class="card-body"><div id="eventLog"></div></div>
+            </div>
+           
+        </div>
     </div>
 </div>
+
+<!-- ¡NUEVO MODAL PARA AÑADIR ESTADOS! -->
+<div class="modal fade" id="addEstadoModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Añadir Nuevo Tipo de Estado</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label for="nuevo-estado-input" class="form-label">Nombre del Nuevo Estado:</label>
+        <input type="text" id="nuevo-estado-input" class="form-control" placeholder="Ej: Calibración de Sensores">
+        <div id="modal-alert-placeholder"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="guardar-nuevo-estado-btn">Añadir y Seleccionar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    // --- 1. REFERENCIAS A ELEMENTOS DEL DOM ---
+    const lineaSelect = document.getElementById('manual-linea-select');
+    const accionSelect = document.getElementById('manual-accion-select');
+    const aplicarBtn = document.getElementById('manual-aplicar-btn');
+    const confirmationDiv = document.getElementById('manual-confirmation');
+    const monitoredLineNameEl = document.getElementById('monitored-line-name');
+    const realtimeDataContainer = document.getElementById('realtime-data-container');
+    const eventLog = document.getElementById('eventLog');
+    const rtChartCtx = document.getElementById('realtime-chart').getContext('2d');
+    const nuevoEstadoInput = document.getElementById('nuevo-estado-input');
+    const guardarNuevoEstadoBtn = document.getElementById('guardar-nuevo-estado-btn');
+    const modalAlertPlaceholder = document.getElementById('modal-alert-placeholder');
+    
+    // --- 2. VARIABLES DE ESTADO Y WEBSOCKET ---
+    let socket = null;
+    let rtChart;
+    let ultimoPaqueteSensor = null; // Para guardar los datos del sensor en tiempo real
+
+    // --- 3. FUNCIONES AUXILIARES ---
+    function logEvent(message, type = 'info') {
+        const timestamp = new Date().toLocaleTimeString();
+        eventLog.innerHTML += `<div class="log-${type}">[${timestamp}] ${message}</div>`;
+        eventLog.scrollTop = eventLog.scrollHeight;
+    }
+
+    function createRealtimeChart() {
+        if (rtChart) rtChart.destroy();
+        rtChart = new Chart(rtChartCtx, {
+            type: 'line',
+            data: { labels: [], datasets: [
+                { label: 'Uso (%)', data: [], borderColor: 'rgba(40, 167, 69, 0.8)', tension: 0.3 },
+                { label: 'Temp (°C)', data: [], borderColor: 'rgba(255, 193, 7, 0.8)', tension: 0.3 },
+                { label: 'Presión (bar)', data: [], borderColor: 'rgba(13, 110, 253, 0.8)', tension: 0.3 }
+            ]},
+            options: { scales: { y: { beginAtZero: false } }, plugins: { legend: { display: true } } }
+        });
+    }
+
+    function poblarAccionesSelect(estadosPosibles) {
+        accionSelect.innerHTML = '';
+        if (estadosPosibles && estadosPosibles.length > 0) {
+            estadosPosibles.forEach(estado => {
+                if (estado && estado !== 'No Intervenir') {
+                    const option = document.createElement('option');
+                    option.value = estado;
+                    option.textContent = estado;
+                    accionSelect.appendChild(option);
+                }
+            });
+        } else {
+            accionSelect.innerHTML = '<option value="">No hay estados</option>';
+        }
+    }
+
+    function updateRealtimeUI(data) {
+        if (!data || !data.datos_sensor) return;
+        document.getElementById('rt-uso').textContent = `${parseFloat(data.datos_sensor.uso).toFixed(1)} %`;
+        document.getElementById('rt-temp').textContent = `${parseFloat(data.datos_sensor.temperatura).toFixed(1)} °C`;
+        document.getElementById('rt-pres').textContent = `${parseFloat(data.datos_sensor.presion).toFixed(1)} bar`;
+        document.getElementById('rt-estado').textContent = data.estado_real_maquina;
+
+        if (!rtChart) createRealtimeChart();
+        const labels = rtChart.data.labels;
+        labels.push(new Date().toLocaleTimeString());
+        if (labels.length > 20) {
+            labels.shift();
+            rtChart.data.datasets.forEach(dataset => dataset.data.shift());
+        }
+        rtChart.data.datasets[0].data.push(data.datos_sensor.uso);
+        rtChart.data.datasets[1].data.push(data.datos_sensor.temperatura);
+        rtChart.data.datasets[2].data.push(data.datos_sensor.presion);
+        rtChart.update('none');
+    }
+
+    async function handleLineaChange() {
+        const selectedLinea = lineaSelect.value;
+        ultimoPaqueteSensor = null; // Resetear al cambiar de línea
+
+        if (!selectedLinea) {
+            if (socket) socket.close();
+            realtimeDataContainer.style.display = 'none';
+            monitoredLineNameEl.textContent = 'Seleccione una máquina para ver sus datos';
+            poblarAccionesSelect([]);
+            return;
+        }
+
+        monitoredLineNameEl.textContent = `Monitoreando: ${selectedLinea}`;
+        realtimeDataContainer.style.display = 'block';
+        createRealtimeChart();
+
+        // 1. Obtener la lista de estados para el <select>
+        try {
+            const apiUrl = `/markov/estado-actual/?linea=${encodeURIComponent(selectedLinea)}`;
+            const response = await fetch(apiUrl);
+            if (!response.ok) throw new Error('No se pudo obtener la lista de estados.');
+            const data = await response.json();
+            poblarAccionesSelect(data.estados_posibles);
+        } catch (error) {
+            logEvent(`Error al obtener estados: ${error.message}`, 'error');
+            poblarAccionesSelect([]);
+        }
+
+        // 2. Conectar al WebSocket
+        if (socket) socket.close();
+        const wsProtocol = window.location.protocol === 'https' ? 'wss' : 'ws';
+        const ws_url = `${wsProtocol}://${window.location.host}/ws/maquinas/${encodeURIComponent(selectedLinea)}/`;
+        socket = new WebSocket(ws_url);
+        
+        socket.onopen = () => logEvent(`Conectado a ${selectedLinea}.`);
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'realtime_recommendation') {
+                ultimoPaqueteSensor = data.datos_sensor; // Guardar el último paquete
+                updateRealtimeUI(data); // Actualizar toda la UI de monitoreo
+            }
+        };
+    }
+
+    // --- 4. LÓGICA DE EVENTOS ---
+    lineaSelect.addEventListener('change', handleLineaChange);
+
+   guardarNuevoEstadoBtn.addEventListener('click', function() {
+        const nuevoEstadoNombre = nuevoEstadoInput.value.trim();
+        modalAlertPlaceholder.innerHTML = ''; 
+
+        if (!nuevoEstadoNombre || nuevoEstadoNombre.length < 3) {
+            modalAlertPlaceholder.innerHTML = '<div class="alert alert-danger mt-2">El nombre debe tener al menos 3 caracteres.</div>';
+            return;
+        }
+
+        const existe = Array.from(accionSelect.options).some(option => option.value.toLowerCase() === nuevoEstadoNombre.toLowerCase());
+        
+        if (existe) {
+            modalAlertPlaceholder.innerHTML = `<div class="alert alert-warning mt-2">El estado '${nuevoEstadoNombre}' ya existe en la lista.</div>`;
+            return;
+        }
+
+        
+        const nuevaOpcion = document.createElement('option');
+        nuevaOpcion.value = nuevoEstadoNombre;
+        nuevaOpcion.textContent = nuevoEstadoNombre;
+        
+       
+        accionSelect.appendChild(nuevaOpcion);
+        
+        
+        nuevaOpcion.selected = true;
+
+        nuevoEstadoInput.value = '';
+        const modalEl = document.getElementById('addEstadoModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) {
+            modal.hide();
+        }
+    });
+
+    aplicarBtn.addEventListener('click', async function() {
+        const linea = lineaSelect.value;
+        const accion = accionSelect.value;
+        const fecha = document.getElementById('manual-fecha').value; 
+        const comentario = document.getElementById('manual-comentario').value;
+
+        if (!ultimoPaqueteSensor) {
+            alert('Por favor, espere a recibir datos del sensor en tiempo real antes de registrar.');
+            return;
+        }
+        if (!linea || !accion || !fecha || !comentario) {
+            alert('Por favor, complete todos los campos del formulario.');
+            return;
+        }
+
+        aplicarBtn.disabled = true;
+        aplicarBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Registrando...';
+        
+        const formData = new FormData();
+        formData.append('linea', linea);
+        formData.append('accion', accion);
+        formData.append('fecha', fecha);
+        formData.append('comentario', comentario);
+        formData.append('temperatura', ultimoPaqueteSensor.temperatura);
+        formData.append('presion', ultimoPaqueteSensor.presion);
+        formData.append('uso', ultimoPaqueteSensor.uso);
+
+        try {
+            const apiUrl = `/qlearning/api/ajuste-manual/`;
+            const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                body: formData
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Error desconocido.');
+            confirmationDiv.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+            document.getElementById('manual-comentario').value = '';
+        } catch (error) {
+            confirmationDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+        } finally {
+            setTimeout(() => {
+                aplicarBtn.disabled = false;
+                aplicarBtn.innerHTML = 'Registrar Ajuste';
+            }, 1500);
+        }
+    });
+
+    // --- 5. INICIALIZACIÓN AL CARGAR LA PÁGINA ---
+    function inicializarPagina() {
+        if (lineaSelect.options.length > 0 && lineaSelect.value) {
+            handleLineaChange();
+        } else if (lineaSelect.options.length > 1) {
+            lineaSelect.selectedIndex = 1;
+            handleLineaChange();
+        }
+    }
+    inicializarPagina();
+});
+</script>
+{% endblock %}

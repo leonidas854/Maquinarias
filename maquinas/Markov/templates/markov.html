@@ -110,99 +110,167 @@
   }
 </style>
 {% endblock %}
-
 {% block content %}
 <div class="page-container markov-page">
   <h2>Optimización con Cadenas de Markov</h2>
-
-  <div class="form-group">
-    <label for="linea-select">Seleccione su máquina:</label>
-    <select id="linea-select">
-      {% for linea in lineas %}
-        <option value="{{ linea.Nombre }}">{{ linea.Nombre }}</option>
-      {% endfor %}
-    </select>
+  
+  <div class="row">
+    <div class="col-md-5">
+      <!-- Sección de Controles -->
+      <div class="form-group">
+        <label for="linea-select">Seleccione su máquina:</label>
+        <select id="linea-select" class="form-select">
+          {% for linea in lineas %}
+            <option value="{{ linea.Nombre }}">{{ linea.Nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="estado-info">
+        <h4>Estado actual: <span id="estado-actual">-</span></h4>
+        <p>Estados posibles: <span id="estados-posibles">-</span></p>
+      </div>
+      <div class="form-group">
+        <label for="saltos">Días de simulación:</label>
+        <input type="number" id="saltos" class="form-control" min="1" value="1">
+      </div>
+      <button id="btn-prediccion" class="btn btn-primary">Predecir Probabilidades</button>
+      <div id="resultado-markov" class="matriz-resultado mt-3"></div>
+    </div>
+    <div class="col-md-7">
+      <!-- Sección para la Gráfica de Transiciones -->
+      <h4>Mapa de Transiciones (Heatmap)</h4>
+      <p class="text-muted small">Muestra cuántas veces se pasó del "Estado Origen" (eje Y) al "Estado Destino" (eje X).</p>
+      <div id="transiciones-chart-container">
+        <canvas id="transiciones-chart"></canvas>
+      </div>
+    </div>
   </div>
-
-  <div class="estado-info">
-    <h4>Estado actual: <span id="estado-actual">-</span></h4>
-    <p>Estados posibles: <span id="estados-posibles">-</span></p>
-  </div>
-
-  <div class="form-group">
-    <label for="saltos">Días de simulación:</label>
-    <input type="number" id="saltos" min="1" placeholder="Ej: 5">
-  </div>
-
-  <button id="btn-prediccion">Aplicar Cambios</button>
-
-  <div id="resultado-markov" class="matriz-resultado"></div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
+<!-- Importar librerías de Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const selectLinea = document.getElementById('linea-select');
-  const estadoActual = document.getElementById('estado-actual');
-  const estadosPosibles = document.getElementById('estados-posibles');
+    const selectLinea = document.getElementById('linea-select');
+    const estadoActualEl = document.getElementById('estado-actual');
+    const estadosPosiblesEl = document.getElementById('estados-posibles');
+    const btnPrediccion = document.getElementById('btn-prediccion');
+    const resultadoDiv = document.getElementById('resultado-markov');
+    const chartContainer = document.getElementById('transiciones-chart-container');
 
-  async function actualizarInfo() {
-    const seleccion = selectLinea.value;
-    if (!seleccion) {
-      estadoActual.textContent = '-';
-      estadosPosibles.textContent = '-';
-      return;
+    let transicionesChart;
+
+    async function actualizarInfo() {
+        const seleccion = selectLinea.value;
+        if (!seleccion) return;
+
+        // Limpiar resultados anteriores
+        resultadoDiv.innerHTML = '';
+        if (transicionesChart) transicionesChart.destroy();
+
+        // Obtener estado actual
+        const responseEstado = await fetch(`/markov/estado-actual/?linea=${encodeURIComponent(seleccion)}`);
+        const dataEstado = await responseEstado.json();
+        estadoActualEl.textContent = dataEstado.estado_actual || 'Sin datos';
+        estadosPosiblesEl.textContent = dataEstado.estados_posibles?.join(', ') || '-';
+
+        // Obtener y dibujar la matriz de transiciones
+        const responseMatriz = await fetch(`/markov/matriz-transiciones/?linea=${encodeURIComponent(seleccion)}`);
+        const dataMatriz = await responseMatriz.json();
+        
+        if (dataMatriz.error) {
+            chartContainer.innerHTML = `<p class="text-danger">${dataMatriz.error}</p>`;
+        } else {
+            dibujarHeatmap(dataMatriz.estados, dataMatriz.heatmap_data);
+        }
     }
 
-    const response = await fetch(`/markov/estado-actual/?linea=${encodeURIComponent(seleccion)}`);
-    const data = await response.json();
+    function dibujarHeatmap(estados, data) {
+        chartContainer.innerHTML = '<canvas id="transiciones-chart"></canvas>'; // Reset canvas
+        const ctx = document.getElementById('transiciones-chart').getContext('2d');
+        
+        transicionesChart = new Chart(ctx, {
+            type: 'matrix',
+            data: {
+                datasets: [{
+                    label: 'Conteo de Transiciones',
+                    data: data,
+                    backgroundColor(ctx) {
+                        const value = ctx.dataset.data[ctx.dataIndex].v;
+                        if (value === 0) return 'rgba(240, 240, 240, 0.5)';
+                        const alpha = 0.1 + (value / (Math.max(...data.map(d => d.v)) || 1)) * 0.9;
+                        return `rgba(220, 53, 69, ${alpha})`;
+                    },
+                    borderColor: 'grey',
+                    borderWidth: 1,
+                    width: ({chart}) => (chart.chartArea || {}).width / estados.length - 1,
+                    height: ({chart}) => (chart.chartArea || {}).height / estados.length - 1
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            title: () => '',
+                            label: (context) => `De ${context.raw.y} a ${context.raw.x}: ${context.raw.v} veces`
+                        }
+                    }
+                },
+                scales: {
+                    x: { type: 'category', labels: estados, ticks: { display: true } },
+                    y: { type: 'category', labels: estados, offset: true, ticks: { display: true } }
+                }
+            }
+        });
+    }
 
-    estadoActual.textContent = data.estado_actual || 'Sin datos';
-    estadosPosibles.textContent = data.estados_posibles?.join(', ') || '-';
-  }
+    btnPrediccion.addEventListener('click', async () => {
+        const linea = selectLinea.value;
+        const saltos = document.getElementById('saltos').value;
 
-  selectLinea.addEventListener('change', actualizarInfo);
-  actualizarInfo();
-});
+        if (!linea || !saltos) {
+            alert("Seleccione una línea y defina los días de simulación.");
+            return;
+        }
 
-document.getElementById('btn-prediccion').addEventListener('click', async () => {
-  const linea = document.getElementById('linea-select').value;
-  const saltos = document.getElementById('saltos').value;
+        const formData = new FormData();
+        formData.append('linea', linea);
+        formData.append('saltos', saltos);
 
-  if (!linea || !saltos) {
-    alert("Seleccione una línea y defina los días de simulación.");
-    return;
-  }
+        const response = await fetch("{% url 'predecir_markov' %}", {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            body: formData
+        });
 
-  const formData = new FormData();
-  formData.append('linea', linea);
-  formData.append('saltos', saltos);
+        const data = await response.json();
 
-  const response = await fetch("{% url 'predecir_markov' %}", {
-    method: 'POST',
-    headers: {
-      'X-CSRFToken': '{{ csrf_token }}'
-    },
-    body: formData
-  });
+        if (data.error) {
+            resultadoDiv.innerHTML = `<p class="text-danger">${data.error}</p>`;
+            return;
+        }
 
-  const data = await response.json();
-  const resultadoDiv = document.getElementById('resultado-markov');
+        let html = `<h4>Predicción a ${saltos} días</h4>`;
+        html += `<p>Desde estado: <strong>${data.Estado_actual}</strong></p>`;
+        html += `<table class="table table-sm"><thead><tr><th>Estado Futuro</th><th>Probabilidad</th></tr></thead><tbody>`;
+        // Ordenar por probabilidad descendente
+        data.detalles.sort((a, b) => b.probabilidad - a.probabilidad);
+        data.detalles.forEach(e => {
+            html += `<tr><td>${e.estado}</td><td>${(e.probabilidad * 100).toFixed(2)}%</td></tr>`;
+        });
+        html += `</tbody></table>`;
+        resultadoDiv.innerHTML = html;
+    });
 
-  if (data.error) {
-    resultadoDiv.innerHTML = `<p style="color:red;">${data.error}</p>`;
-    return;
-  }
-
-  let html = `<h4>Estado Actual: ${data.Estado_actual}</h4>`;
-  html += `<table><thead><tr><th>Estado</th><th>Probabilidad (%)</th></tr></thead><tbody>`;
-  data.detalles.forEach(e => {
-    html += `<tr><td>${e.estado}</td><td>${(e.probabilidad * 100).toFixed(2)}%</td></tr>`;
-  });
-  html += `</tbody></table>`;
-
-  resultadoDiv.innerHTML = html;
+    selectLinea.addEventListener('change', actualizarInfo);
+    // Carga inicial al cargar la página
+    actualizarInfo();
 });
 </script>
 {% endblock %}

@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from . import consumer
-
+app_name = 'q_learning'
 urlpatterns = [
     
     path('', views.select_linea_dashboard, name='select_linea_dashboard'),
@@ -14,5 +14,6 @@ urlpatterns = [
     
     path('api/todas-las-lineas/', views.get_todas_las_lineas, name='api_get_todas_las_lineas'),
     
-   
+    path('api/ajuste-manual/', views.registrar_ajuste_manual, name='api_ajuste_manual'),
+    path('manual/', views.ajuste_manual_view, name='ajuste_manual_view'),
 ]
